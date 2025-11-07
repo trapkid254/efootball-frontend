@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONA KIKWETU - Efootball Tournament</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-placeholder">TK</div>
+                <span>TONA KIKWETU</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#tournaments" class="nav-link">Tournaments</a>
+                <a href="#leaderboard" class="nav-link">Leaderboard</a>
+                <a href="#about" class="nav-link">About</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-login" id="loginBtn">Login</button>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>Compete. Win. Dominate.</h1>
+            <p>Join Kenya's premier Efootball Mobile tournament platform. Register now and showcase your skills!</p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <h3>500+</h3>
+                    <p>Active Players</p>
+                </div>
+                <div class="stat">
+                    <h3>50+</h3>
+                    <p>Tournaments</p>
+                </div>
+                <div class="stat">
+                    <h3>KSh 200K+</h3>
+                    <p>Total Prizes</p>
+                </div>
+            </div>
+            <div class="hero-buttons">
+                <button class="btn-primary" id="joinTournament">Join Tournament</button>
+                <button class="btn-secondary" id="learnMore">Learn More</button>
+            </div>
+        </div>
+        <div class="hero-banner">
+            <div class="banner-card">
+                <div class="banner-header">
+                    <span class="featured-tag">FEATURED</span>
+                    <span class="prize-tag">KSh 15,000</span>
+                </div>
+                <h3>Grand Championship January</h3>
+                <p>64 Players • Knockout Format • Entry: KSh 200</p>
+                <div class="banner-footer">
+                    <span>Starts: Jan 20, 2024</span>
+                    <button class="btn-banner">Register Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Active Tournaments -->
+    <section class="tournaments-section" id="tournaments">
+        <div class="container">
+            <h2>Active Tournaments</h2>
+            <div class="section-header">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="active">Active</button>
+                    <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+                    <button class="filter-btn" data-filter="free">Free Entry</button>
+                </div>
+            </div>
+            <div class="tournaments-grid" id="tournamentsGrid">
+                <!-- Tournament cards will be dynamically loaded -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section class="leaderboard-section" id="leaderboard">
+        <div class="container">
+            <h2>Global Leaderboard</h2>
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <span>Rank</span>
+                    <span>Player</span>
+                    <span>Points</span>
+                    <span>Wins</span>
+                </div>
+                <div class="leaderboard-list" id="leaderboardList">
+                    <!-- Leaderboard items will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-icon">1</div>
+                    <h3>Register</h3>
+                    <p>Create your account with WhatsApp number and Efootball ID</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-icon">2</div>
+                    <h3>Join Tournament</h3>
+                    <p>Browse active tournaments and register for your preferred one</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-icon">3</div>
+                    <h3>Play & Submit</h3>
+                    <p>Play your matches and submit results with screenshots</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-icon">4</div>
+                    <h3>Win Prizes</h3>
+                    <p>Climb the leaderboard and win cash prizes via M-Pesa</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>TONA KIKWETU</h3>
+                    <p>Kenya's premier Efootball tournament platform for mobile gamers.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <a href="#home">Home</a>
+                    <a href="#tournaments">Tournaments</a>
+                    <a href="#leaderboard">Leaderboard</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <a href="#">Help Center</a>
+                    <a href="#">Contact Us</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 TONA KIKWETU. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Login to TONA KIKWETU</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="whatsapp">WhatsApp Number</label>
+                    <input type="tel" id="whatsapp" name="whatsapp" placeholder="e.g., 0712345678" required>
+                </div>
+                <div class="form-group">
+                    <label for="efootballId">Efootball ID</label>
+                    <input type="text" id="efootballId" name="efootballId" placeholder="Your Efootball Player ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn-primary btn-full">Login</button>
+            </form>
+            <p class="auth-switch">Don't have an account? <a href="#" id="showRegister">Register here</a></p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Join TONA KIKWETU</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regWhatsapp">WhatsApp Number</label>
+                    <input type="tel" id="regWhatsapp" name="whatsapp" placeholder="e.g., 0712345678" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEfootballId">Efootball ID</label>
+                    <input type="text" id="regEfootballId" name="efootballId" placeholder="Your Efootball Player ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" name="password" placeholder="Create a strong password" required>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirm Password</label>
+                    <input type="password" id="regConfirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+                </div>
+                <button type="submit" class="btn-primary btn-full">Create Account</button>
+            </form>
+            <p class="auth-switch">Already have an account? <a href="#" id="showLogin">Login here</a></p>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - TONA KIKWETU</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Admin Navigation -->
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-placeholder">TK</div>
+                <span>TONA KIKWETU ADMIN</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#dashboard" class="nav-link active">Dashboard</a>
+                <a href="#tournaments" class="nav-link">Tournaments</a>
+                <a href="#matches" class="nav-link">Matches</a>
+                <a href="#players" class="nav-link">Players</a>
+                <a href="#payments" class="nav-link">Payments</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-logout" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Dashboard -->
+    <section class="admin-dashboard" id="dashboard">
+        <div class="container">
+            <h1>Admin Dashboard</h1>
+            
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card admin-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPlayers">0</h3>
+                        <p>Total Players</p>
+                    </div>
+                </div>
+                <div class="stat-card admin-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activeTournamentsCount">0</h3>
+                        <p>Active Tournaments</p>
+                    </div>
+                </div>
+                <div class="stat-card admin-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pendingMatches">0</h3>
+                        <p>Pending Matches</p>
+                    </div>
+                </div>
+                <div class="stat-card admin-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalRevenue">0</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="admin-actions">
+                <h2>Quick Actions</h2>
+                <div class="action-buttons">
+                    <button class="admin-btn primary" onclick="showCreateTournamentModal()">
+                        <i class="fas fa-plus"></i>
+                        Create Tournament
+                    </button>
+                    <button class="admin-btn secondary" onclick="showManagePlayers()">
+                        <i class="fas fa-user-cog"></i>
+                        Manage Players
+                    </button>
+                    <button class="admin-btn secondary" onclick="showPendingResults()">
+                        <i class="fas fa-clipboard-check"></i>
+                        Verify Results
+                    </button>
+                    <button class="admin-btn secondary" onclick="showPaymentManagement()">
+                        <i class="fas fa-money-check"></i>
+                        Manage Payments
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="recent-activity">
+                <h2>Recent Activity</h2>
+                <div class="activity-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Activity</th>
+                                <th>User</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminActivityTable">
+                            <!-- Activity data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Create Tournament Modal -->
+    <div class="modal" id="createTournamentModal">
+        <div class="modal-content large">
+            <span class="close">&times;</span>
+            <h2>Create New Tournament</h2>
+            <form id="createTournamentForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tournamentName">Tournament Name</label>
+                        <input type="text" id="tournamentName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tournamentFormat">Format</label>
+                        <select id="tournamentFormat" name="format" required>
+                            <option value="knockout">Knockout</option>
+                            <option value="group">Group Stage</option>
+                            <option value="group+knockout">Group + Knockout</option>
+                            <option value="league">League</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="entryFee">Entry Fee (KSh)</label>
+                        <input type="number" id="entryFee" name="entryFee" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="prizePool">Prize Pool (KSh)</label>
+                        <input type="number" id="prizePool" name="prizePool" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="capacity">Player Capacity</label>
+                        <input type="number" id="capacity" name="capacity" min="2" max="128" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="datetime-local" id="startDate" name="startDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="tournamentRules">Rules</label>
+                    <textarea id="tournamentRules" name="rules" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="hideCreateTournamentModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Tournament</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

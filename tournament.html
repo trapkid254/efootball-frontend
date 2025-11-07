@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournaments - TONA KIKWETU</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-placeholder">TK</div>
+                <span>TONA KIKWETU</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="tournaments.html" class="nav-link active">Tournaments</a>
+                <a href="matches.html" class="nav-link">My Matches</a>
+                <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+                <a href="profile.html" class="nav-link">Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-login" id="authButton">Login</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tournaments Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Available Tournaments</h1>
+            <p>Join exciting Efootball tournaments and compete for amazing prizes</p>
+        </div>
+    </section>
+
+    <!-- Tournaments Filter -->
+    <section class="filters-section">
+        <div class="container">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All Tournaments</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Format:</label>
+                    <select id="formatFilter">
+                        <option value="all">All Formats</option>
+                        <option value="knockout">Knockout</option>
+                        <option value="group">Group Stage</option>
+                        <option value="league">League</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Entry Fee:</label>
+                    <select id="feeFilter">
+                        <option value="all">Any Fee</option>
+                        <option value="free">Free Entry</option>
+                        <option value="paid">Paid Entry</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="applyFilters">Apply Filters</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tournaments Grid -->
+    <section class="tournaments-page">
+        <div class="container">
+            <div class="tournaments-grid" id="tournamentsGrid">
+                <!-- Tournaments will be loaded here -->
+            </div>
+            
+            <!-- Loading and Empty States -->
+            <div id="loadingState" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading tournaments...</p>
+            </div>
+            
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-trophy"></i>
+                <h3>No tournaments found</h3>
+                <p>Try adjusting your filters or check back later for new tournaments.</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Tournament Details Modal -->
+    <div class="modal" id="tournamentDetailsModal">
+        <div class="modal-content large">
+            <span class="close">&times;</span>
+            <div id="tournamentDetailsContent">
+                <!-- Tournament details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/tournaments.js"></script>
+</body>
+</html>

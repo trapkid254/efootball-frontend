@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Matches - TONA KIKWETU</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-placeholder">TK</div>
+                <span>TONA KIKWETU</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="tournaments.html" class="nav-link">Tournaments</a>
+                <a href="matches.html" class="nav-link active">My Matches</a>
+                <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+                <a href="profile.html" class="nav-link">Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-logout" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Matches Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>My Matches</h1>
+            <p>Manage your upcoming matches and submit results</p>
+        </div>
+    </section>
+
+    <!-- Matches Filter -->
+    <section class="filters-section">
+        <div class="container">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All Matches</option>
+                        <option value="scheduled">Upcoming</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="disputed">Disputed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tournament:</label>
+                    <select id="tournamentFilter">
+                        <option value="all">All Tournaments</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="applyFilters">Apply Filters</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Matches Content -->
+    <section class="matches-content">
+        <div class="container">
+            <!-- Upcoming Matches -->
+            <div class="matches-section">
+                <h2><i class="fas fa-clock"></i> Upcoming Matches</h2>
+                <div class="matches-grid" id="upcomingMatches">
+                    <!-- Upcoming matches will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Matches Needing Action -->
+            <div class="matches-section">
+                <h2><i class="fas fa-exclamation-circle"></i> Action Required</h2>
+                <div class="matches-grid" id="actionRequiredMatches">
+                    <!-- Matches needing action will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Recent Matches -->
+            <div class="matches-section">
+                <h2><i class="fas fa-history"></i> Recent Matches</h2>
+                <div class="matches-grid" id="recentMatches">
+                    <!-- Recent matches will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Empty States -->
+            <div id="loadingState" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading matches...</p>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-gamepad"></i>
+                <h3>No matches found</h3>
+                <p>You don't have any matches scheduled yet. Join a tournament to get started!</p>
+                <button class="btn-primary" onclick="window.location.href='tournaments.html'">Browse Tournaments</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Submit Result Modal -->
+    <div class="modal" id="submitResultModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Submit Match Result</h2>
+            <form id="submitResultForm">
+                <input type="hidden" id="matchId" name="matchId">
+                
+                <div class="match-info" id="modalMatchInfo">
+                    <!-- Match info will be loaded here -->
+                </div>
+
+                <div class="form-group">
+                    <label for="playerScore">Your Score</label>
+                    <input type="number" id="playerScore" name="playerScore" min="0" max="20" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="opponentScore">Opponent's Score</label>
+                    <input type="number" id="opponentScore" name="opponentScore" min="0" max="20" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="screenshot">Match Screenshot (Required)</label>
+                    <div class="file-upload">
+                        <input type="file" id="screenshot" name="screenshot" accept="image/*" required>
+                        <label for="screenshot" class="file-upload-label">
+                            <i class="fas fa-upload"></i>
+                            <span>Choose Screenshot</span>
+                        </label>
+                        <div class="file-name" id="fileName">No file chosen</div>
+                    </div>
+                    <small>Upload a clear screenshot showing the final score</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="hideSubmitResultModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Submit Result</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Match Details Modal -->
+    <div class="modal" id="matchDetailsModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="matchDetailsContent">
+                <!-- Match details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/matches.js"></script>
+</body>
+</html>

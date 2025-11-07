@@ -1,0 +1,361 @@
+/* Dashboard Specific Styles */
+.dashboard-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    padding: 3rem 0;
+    margin-top: 80px;
+}
+
+.welcome-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-info h1 {
+    color: white;
+    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+}
+
+.user-info p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+}
+
+.quick-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 150px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: var(--accent-color);
+}
+
+.stat-card h3 {
+    color: white;
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-card span {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+.dashboard-content {
+    padding: 3rem 0;
+    background: var(--bg-primary);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.dashboard-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header h2 {
+    color: var(--accent-color);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.view-all {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+/* Matches List */
+.matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.match-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+
+.match-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.match-info h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.match-info p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.match-time {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+/* Tournaments List */
+.tournaments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tournament-item {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+
+.tournament-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.tournament-item h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.tournament-meta {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.tournament-prize {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+/* Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.activity-content h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.activity-content p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.activity-time {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    border-color: var(--accent-color);
+}
+
+.action-btn i {
+    font-size: 1.5rem;
+    color: var(--accent-color);
+}
+
+.action-btn span {
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+/* Logout Button */
+.btn-logout {
+    background: var(--error-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn-logout:hover {
+    background: #d63031;
+    transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .welcome-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .quick-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .quick-stats {
+        flex-direction: column;
+    }
+    
+    .stat-card {
+        flex: none;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .user-info h1 {
+        font-size: 2rem;
+    }
+}
+
+/* Loading States */
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+}

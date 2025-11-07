@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - TONA KIKWETU</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-placeholder">TK</div>
+                <span>TONA KIKWETU</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="tournaments.html" class="nav-link">Tournaments</a>
+                <a href="matches.html" class="nav-link">My Matches</a>
+                <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+                <a href="profile.html" class="nav-link active">Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-logout" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Header -->
+    <section class="profile-header">
+        <div class="container">
+            <div class="profile-overview">
+                <div class="profile-avatar-section">
+                    <div class="avatar-container">
+                        <div class="user-avatar large" id="userAvatar">U</div>
+                        <button class="avatar-upload-btn" id="avatarUploadBtn">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                </div>
+                <div class="profile-info">
+                    <h1 id="userDisplayName">Player Name</h1>
+                    <p class="user-efootball-id" id="userEfootballId">Efootball ID: </p>
+                    <p class="user-whatsapp" id="userWhatsApp">WhatsApp: </p>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <h3 id="totalWins">0</h3>
+                            <span>Wins</span>
+                        </div>
+                        <div class="stat">
+                            <h3 id="totalMatches">0</h3>
+                            <span>Matches</span>
+                        </div>
+                        <div class="stat">
+                            <h3 id="winRate">0%</h3>
+                            <span>Win Rate</span>
+                        </div>
+                        <div class="stat">
+                            <h3 id="playerRank">-</h3>
+                            <span>Rank</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Profile Content -->
+    <section class="profile-content">
+        <div class="container">
+            <div class="profile-tabs">
+                <button class="tab-btn active" data-tab="edit">Edit Profile</button>
+                <button class="tab-btn" data-tab="stats">Statistics</button>
+                <button class="tab-btn" data-tab="history">Match History</button>
+                <button class="tab-btn" data-tab="security">Security</button>
+            </div>
+
+            <!-- Edit Profile Tab -->
+            <div class="tab-content active" id="edit-tab">
+                <div class="profile-card">
+                    <h2>Profile Information</h2>
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="displayName">Display Name</label>
+                                <input type="text" id="displayName" name="displayName" placeholder="Enter your display name">
+                            </div>
+                            <div class="form-group">
+                                <label for="location">Location</label>
+                                <input type="text" id="location" name="location" placeholder="e.g., Nairobi, Kenya">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="bio">Bio</label>
+                            <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself and your gaming experience..."></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div class="tab-content" id="stats-tab">
+                <div class="profile-card">
+                    <h2>Player Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-trophy"></i>
+                            <div class="stat-info">
+                                <h3 id="statsWins">0</h3>
+                                <span>Total Wins</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-times"></i>
+                            <div class="stat-info">
+                                <h3 id="statsLosses">0</h3>
+                                <span>Total Losses</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-equals"></i>
+                            <div class="stat-info">
+                                <h3 id="statsDraws">0</h3>
+                                <span>Draws</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-chart-line"></i>
+                            <div class="stat-info">
+                                <h3 id="statsWinRate">0%</h3>
+                                <span>Win Rate</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Performance Over Time</h3>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-bar"></i>
+                            <p>Performance chart will be displayed here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Match History Tab -->
+            <div class="tab-content" id="history-tab">
+                <div class="profile-card">
+                    <h2>Recent Matches</h2>
+                    <div class="matches-history" id="matchesHistory">
+                        <!-- Match history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Tab -->
+            <div class="tab-content" id="security-tab">
+                <div class="profile-card">
+                    <h2>Security Settings</h2>
+                    <form id="passwordForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" name="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/auth.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>
