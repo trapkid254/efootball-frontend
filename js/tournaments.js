@@ -17,6 +17,49 @@ class TournamentsPage {
         this.loadTournaments();
     }
 
+    setupModal() {
+        // Get the modal element
+        this.modal = document.getElementById('tournamentDetailsModal');
+        
+        // Get the element that closes the modal
+        const closeBtn = document.querySelector('.modal .close');
+        
+        // When the user clicks on (x), close the modal
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                this.hideModal();
+            };
+        }
+        
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = (event) => {
+            if (event.target === this.modal) {
+                this.hideModal();
+            }
+        };
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal && this.modal.style.display === 'block') {
+                this.hideModal();
+            }
+        });
+    }
+    
+    showModal() {
+        if (this.modal) {
+            this.modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    hideModal() {
+        if (this.modal) {
+            this.modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
     checkAuth() {
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');

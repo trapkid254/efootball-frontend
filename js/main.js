@@ -16,62 +16,94 @@ class TonaKikwetuApp {
     }
 
     setupEventListeners() {
-        // Theme Toggle
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            this.toggleTheme();
-        });
-
-        // Login Modal
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            this.showLoginModal();
-        });
-
-        // Close modals
-        document.querySelectorAll('.close').forEach(closeBtn => {
-            closeBtn.addEventListener('click', (e) => {
-                this.hideAllModals();
+        // Theme toggle - only if element exists
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                this.toggleTheme();
             });
-        });
+        }
 
-        // Login Form
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
-
-        // Register Form
-        document.getElementById('registerForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRegister();
-        });
-
-        // Auth switching
-        document.getElementById('showRegister').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showRegisterModal();
-        });
-
-        document.getElementById('showLogin').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showLoginModal();
-        });
-
-        // Join Tournament
-        document.getElementById('joinTournament').addEventListener('click', () => {
-            this.handleJoinTournament();
-        });
-
-        // Filter buttons
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.handleFilterClick(e.target);
+        // Login Modal - only if element exists
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showLoginModal();
             });
-        });
+        }
+
+        // Close modals - only if elements exist
+        const closeButtons = document.querySelectorAll('.close');
+        if (closeButtons.length > 0) {
+            closeButtons.forEach(closeBtn => {
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.hideAllModals();
+                });
+            });
+        }
+
+        // Login Form - only if element exists
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleLogin();
+            });
+        }
+
+        // Register Form - only if element exists
+        const registerForm = document.getElementById('registerForm');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleRegister();
+            });
+        }
+
+        // Auth switching - only if elements exist
+        const showRegister = document.getElementById('showRegister');
+        if (showRegister) {
+            showRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showRegisterModal();
+            });
+        }
+
+        const showLogin = document.getElementById('showLogin');
+        if (showLogin) {
+            showLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showLoginModal();
+            });
+        }
+
+        // Join Tournament - only if element exists
+        const joinTournament = document.getElementById('joinTournament');
+        if (joinTournament) {
+            joinTournament.addEventListener('click', () => {
+                this.handleJoinTournament();
+            });
+        }
+
+        // Filter buttons - only if elements exist
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        if (filterButtons.length > 0) {
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.handleFilterClick(e.target);
+                });
+            });
+        }
 
         // Learn More button
-        document.getElementById('learnMore').addEventListener('click', () => {
-            document.getElementById('about').scrollIntoView({ behavior: 'smooth' });
-        });
+        const learnMore = document.getElementById('learnMore');
+        if (learnMore) {
+            learnMore.addEventListener('click', () => {
+                document.getElementById('about').scrollIntoView({ behavior: 'smooth' });
+            });
+        }
 
         // Close modal when clicking outside
         window.addEventListener('click', (e) => {
