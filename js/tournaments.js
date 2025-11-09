@@ -142,7 +142,7 @@ class TournamentsPage {
                 const tournaments = data.tournaments || [];
                 
                 if (tournaments.length === 0) {
-                    this.showEmptyState('No tournaments available at the moment. Please check back later.');
+                    this.showEmptyState('No tournaments are currently available. New tournaments are added regularly, so please check back soon or refresh the page for updates.', false);
                     return;
                 }
 
@@ -645,27 +645,31 @@ showLoading(show) {
     }
 }
 
-showEmptyState(message, showTryAgain = false) {
+showEmptyState(message, isError = false) {
     const grid = document.getElementById('tournamentsGrid');
-    grid.innerHTML = `
-        <div class="empty-state" style="text-align: center; padding: 3rem 1rem;">
-            <i class="fas fa-trophy" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
-            <h3 style="color: var(--text-primary); margin-bottom: 1rem;">${message}</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                ${showTryAgain ? 'Try adjusting your filters or check back later for new tournaments.' : ''}
-            </p>
-            ${showTryAgain ? `
-                <button class="btn-primary" id="refreshTournaments" style="margin: 0 auto;">
-                    <i class="fas fa-sync-alt"></i> Refresh Tournaments
-                </button>
-            ` : ''}
-        </div>
-    `;
-
-    // Add event listener for refresh button if it exists
-    const refreshBtn = document.getElementById('refreshTournaments');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
+    const emptyState = document.getElementById('emptyState');
+    const loadingState = document.getElementById('loadingState');
+    
+    loadingState.style.display = 'none';
+    grid.style.display = 'none';
+    
+    if (isError) {
+        emptyState.innerHTML = `
+            <div class="empty-state-content">
+                <div class="empty-state-icon error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Unable to Load Tournaments</h3>
+                <p>${message}</p>
+                <div class="empty-state-actions">
+                    <button class="btn btn-primary" id="retryButton">
+                        <i class="fas fa-sync-alt"></i> Try Again
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('retryButton').addEventListener('click', () => {
             // Reset filters and reload
             this.filters = {
                 status: 'all',
@@ -678,7 +682,31 @@ showEmptyState(message, showTryAgain = false) {
             this.currentPage = 1;
             this.loadTournaments();
         });
+    } else {
+        emptyState.innerHTML = `
+            <div class="empty-state-content">
+                <div class="empty-state-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h3>No Tournaments Available</h3>
+                <p>${message}</p>
+                <div class="empty-state-actions">
+                    <button class="btn btn-secondary" id="refreshButton">
+                        <i class="fas fa-sync-alt"></i> Refresh Page
+                    </button>
+                    <a href="index.html" class="btn btn-primary">
+                        <i class="fas fa-home"></i> Return Home
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            window.location.reload();
+        });
     }
+    
+    emptyState.style.display = 'flex';
 }
 
     getNotificationIcon(type) {
