@@ -184,21 +184,46 @@ class NavigationManager {
 
 // Initialize navigation manager when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Load navigation component if not already present
-    if (!document.querySelector('.navbar').hasChildNodes()) {
-        fetch('components/navbar.html')
-            .then(response => response.text())
-            .then(html => {
-                document.querySelector('.navbar').innerHTML = html;
-                window.navigationManager = new NavigationManager();
-            })
-            .catch(error => {
-                console.error('Error loading navigation:', error);
-                window.navigationManager = new NavigationManager();
-            });
-    } else {
-        window.navigationManager = new NavigationManager();
+    // Create default navigation if not already present
+    const navbar = document.querySelector('.navbar');
+    if (!navbar || !navbar.hasChildNodes()) {
+        // Create default navigation structure
+        const navHTML = `
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <div class="logo-placeholder">TK</div>
+                    <span>TONA KIKWETU</span>
+                </a>
+                <div class="nav-menu">
+                    <a href="index.html" class="nav-link" data-page="home">Home</a>
+                    <a href="tournament.html" class="nav-link" data-page="tournaments">Tournaments</a>
+                    <a href="matches.html" class="nav-link" data-page="matches">My Matches</a>
+                    <a href="leaderboard.html" class="nav-link" data-page="leaderboard">Leaderboard</a>
+                    <a href="profile.html" class="nav-link" data-page="profile">Profile</a>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn-login" id="authButton">Login</button>
+                </div>
+                <button class="mobile-menu-btn" aria-label="Toggle menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        `;
+        
+        if (navbar) {
+            navbar.innerHTML = navHTML;
+        } else {
+            // Create navbar if it doesn't exist
+            const newNav = document.createElement('nav');
+            newNav.className = 'navbar';
+            newNav.innerHTML = navHTML;
+            document.body.insertBefore(newNav, document.body.firstChild);
+        }
     }
+    
+    // Initialize navigation manager
+    window.navigationManager = new NavigationManager();
     
     // Apply saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
