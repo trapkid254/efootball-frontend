@@ -334,6 +334,8 @@ class TonaKikwetuApp {
 
     renderTournaments() {
         const grid = document.getElementById('tournamentsGrid');
+        if (!grid) return; // Exit if tournaments grid doesn't exist on this page
+        
         grid.innerHTML = this.tournaments.map(tournament => `
             <div class="tournament-card" data-status="${tournament.status}" data-fee="${tournament.entryFee === 0 ? 'free' : 'paid'}">
                 <div class="tournament-header">
@@ -365,6 +367,8 @@ class TonaKikwetuApp {
 
     renderLeaderboard() {
         const list = document.getElementById('leaderboardList');
+        if (!list) return; // Exit if leaderboard list doesn't exist on this page
+        
         list.innerHTML = this.leaderboard.map(player => `
             <div class="leaderboard-item">
                 <div class="rank rank-${player.rank}">#${player.rank}</div>
