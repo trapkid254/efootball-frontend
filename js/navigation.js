@@ -146,6 +146,46 @@ class NavigationManager {
             if (loginModal) {
                 loginModal.style.display = 'block';
                 document.body.style.overflow = 'hidden'; // Prevent scrolling
+                
+                // If we're not on the index page, we need to load the modal styles
+                if (window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
+                    // Add the modal styles if they don't exist
+                    if (!document.getElementById('modal-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'modal-styles';
+                        style.textContent = `
+                            .modal {
+                                display: none;
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                width: 100%;
+                                height: 100%;
+                                background-color: rgba(0, 0, 0, 0.7);
+                                z-index: 1000;
+                                justify-content: center;
+                                align-items: center;
+                            }
+                            .modal-content {
+                                background: var(--bg-secondary);
+                                padding: 2rem;
+                                border-radius: 8px;
+                                width: 90%;
+                                max-width: 500px;
+                                position: relative;
+                                color: var(--text-primary);
+                            }
+                            .close {
+                                position: absolute;
+                                top: 10px;
+                                right: 15px;
+                                font-size: 1.5rem;
+                                cursor: pointer;
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                }
             } else {
                 // Fallback to redirect if modal not found
                 window.location.href = 'index.html#login';
