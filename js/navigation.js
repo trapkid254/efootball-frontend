@@ -129,7 +129,8 @@ class NavigationManager {
     hideModal(modal) {
         if (modal) {
             modal.style.display = 'none';
-            document.body.style.overflow = ''; // Restore scrolling
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = ''; // Reset any padding added for scrollbar
         }
     }
 
@@ -140,56 +141,85 @@ class NavigationManager {
             if (confirm('Are you sure you want to log out?')) {
                 AuthManager.logout();
             }
-        } else {
-            // User is not logged in, show login modal
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal) {
-                loginModal.style.display = 'block';
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
-                
-                // If we're not on the index page, we need to load the modal styles
-                if (window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
-                    // Add the modal styles if they don't exist
-                    if (!document.getElementById('modal-styles')) {
-                        const style = document.createElement('style');
-                        style.id = 'modal-styles';
-                        style.textContent = `
-                            .modal {
-                                display: none;
-                                position: fixed;
-                                top: 0;
-                                left: 0;
-                                width: 100%;
-                                height: 100%;
-                                background-color: rgba(0, 0, 0, 0.7);
-                                z-index: 1000;
-                                justify-content: center;
-                                align-items: center;
-                            }
-                            .modal-content {
-                                background: var(--bg-secondary);
-                                padding: 2rem;
-                                border-radius: 8px;
-                                width: 90%;
-                                max-width: 500px;
-                                position: relative;
-                                color: var(--text-primary);
-                            }
-                            .close {
-                                position: absolute;
-                                top: 10px;
-                                right: 15px;
-                                font-size: 1.5rem;
-                                cursor: pointer;
-                            }
-                        `;
-                        document.head.appendChild(style);
+            return;
+        }
+
+        // User is not logged in, show login modal
+        const loginModal = document.getElementById('loginModal');
+        if (!loginModal) {
+            console.error('Login modal not found!');
+            window.location.href = 'index.html#login';
+            return;
+        }
+
+        // Add modal styles if they don't exist
+        if (!document.getElementById('modal-styles')) {
+            const style = document.createElement('style');
+            style.id = 'modal-styles';
+            style.textContent = `
+                .modal {
+                    display: none;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.7);
+                    z-index: 1000;
+                    overflow-y: auto;
+                    padding: 20px;
+                    box-sizing: border-box;
+                }
+                .modal-content {
+                    background: var(--bg-secondary);
+                    padding: 2rem;
+                    border-radius: 8px;
+                    width: 90%;
+                    max-width: 500px;
+                    position: relative;
+                    margin: 20px auto;
+                    color: var(--text-primary);
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+                .close {
+                    position: absolute;
+                    top: 10px;
+                    right: 15px;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: var(--text-primary);
+                    text-decoration: none;
+                }
+                .close:hover {
+                    color: var(--accent-color);
+                }
+                .modal-open {
+                    overflow: hidden;
+                    padding-right: 15px; /* Prevent content shift when scrollbar disappears */
+                }
+                @media (max-width: 768px) {
+                    .modal-content {
+                        width: 95%;
+                        padding: 1.5rem;
                     }
                 }
-            } else {
-                // Fallback to redirect if modal not found
-                window.location.href = 'index.html#login';
-            }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Show the modal
+        loginModal.style.display = 'flex';
+        loginModal.style.justifyContent = 'center';
+        loginModal.style.alignItems = 'flex-start';
+        loginModal.style.paddingTop = '50px';
+        
+        // Add class to body to handle scroll
+        document.body.classList.add('modal-open');
+        
+        // Focus on first input field
+        const firstInput = loginModal.querySelector('input');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
         }
     }
 
