@@ -105,32 +105,69 @@ class TournamentsPage {
     async loadTournaments() {
         try {
             this.showLoading(true);
-            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const apiBase = window.API_BASE_URL || 'http://localhost:5000'; // Changed to localhost for development
             const params = new URLSearchParams();
             params.set('page', this.currentPage);
             params.set('limit', this.itemsPerPage);
             if (this.filters.status && this.filters.status !== 'all') params.set('status', this.filters.status);
             if (this.filters.format && this.filters.format !== 'all') params.set('format', this.filters.format);
 
-            const resp = await fetch(`${apiBase}/api/tournaments?${params.toString()}`);
-            const data = await resp.json();
-            
-            if (!resp.ok || !data.success) {
-                throw new Error(data.message || 'Failed to fetch tournaments');
-            }
+            // Add cache-busting parameter
+            params.set('_t', new Date().getTime());
 
-            const tournaments = data.tournaments || [];
-            
-            if (tournaments.length === 0) {
-                this.showEmptyState('No tournaments available at the moment. Please check back later.');
-                return;
-            }
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-            this.renderTournaments(tournaments);
-            this.renderPagination(data.pagination?.total || tournaments.length);
+            try {
+                const resp = await fetch(`${apiBase}/api/tournaments?${params.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!resp.ok) {
+                    const errorData = await resp.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP error! status: ${resp.status}`);
+                }
+
+                const data = await resp.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch tournaments');
+                }
+
+                const tournaments = data.tournaments || [];
+                
+                if (tournaments.length === 0) {
+                    this.showEmptyState('No tournaments available at the moment. Please check back later.');
+                    return;
+                }
+
+                this.renderTournaments(tournaments);
+                this.renderPagination(data.pagination?.total || tournaments.length);
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out. Please check your internet connection.');
+                }
+                throw error;
+            }
         } catch (error) {
             console.error('Error loading tournaments:', error);
-            this.showEmptyState('Failed to load tournaments. Please try again later.');
+            let errorMessage = 'Failed to load tournaments. ';
+            
+            if (error.message.includes('Failed to fetch')) {
+                errorMessage += 'Unable to connect to the server. Please check your internet connection and try again.';
+            } else if (error.message.includes('timeout')) {
+                errorMessage += 'The request timed out. The server might be busy. Please try again later.';
+            } else {
+                errorMessage += error.message || 'Please try again later.';
+            }
+            
+            this.showEmptyState(errorMessage, true);
         } finally {
             this.showLoading(false);
         }
