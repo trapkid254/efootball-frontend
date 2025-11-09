@@ -401,6 +401,107 @@ body {
 }
 
 /* Tournaments Section */
+/* Fix for navbar overlap */
+.tournaments-page {
+    padding: 7rem 0 4rem; /* Added top padding to account for fixed navbar */
+    background: var(--bg-primary);
+    min-height: calc(100vh - 60px); /* Ensure full height minus navbar */
+}
+
+/* Filters Section */
+.filters-section {
+    background: var(--bg-secondary);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 60px; /* Height of the navbar */
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filters {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 180px;
+    max-width: 250px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b0b0b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 16px;
+    padding-right: 2.5rem;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 198, 255, 0.2);
+}
+
+#applyFilters {
+    padding: 0.7rem 1.5rem;
+    height: 42px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+#applyFilters:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .filters {
+        gap: 1rem;
+    }
+    
+    .filter-group {
+        min-width: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .filter-group {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    #applyFilters {
+        width: 100%;
+    }
+}
+
 .tournaments-section {
     padding: 6rem 0;
     background: var(--bg-secondary);
