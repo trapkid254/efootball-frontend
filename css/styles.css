@@ -787,8 +787,6 @@ body {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
     opacity: 0;
     transition: opacity 0.3s ease;
     padding: 20px;
@@ -802,7 +800,7 @@ body {
 .modal-content {
     background: var(--bg-secondary);
     border-radius: var(--border-radius);
-    width: 100%;
+    width: 90%;
     max-width: 800px;
     margin: 5% auto;
     padding: 2.5rem;
@@ -814,6 +812,8 @@ body {
     max-height: 90vh;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 2001;
 }
 
 .modal.show .modal-content {
