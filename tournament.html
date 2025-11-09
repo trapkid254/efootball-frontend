@@ -11,9 +11,28 @@
     <script>
         window.API_BASE_URL = 'https://efootball-backend-f8ws.onrender.com';
     </script>
-    <!-- Navigation will be loaded here -->
+    <!-- Navigation -->
     <nav class="navbar">
-        <!-- Navigation content will be loaded by navigation.js -->
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-placeholder">TK</div>
+                <span>TONA KIKWETU</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="tournaments.html" class="nav-link active">Tournaments</a>
+                <a href="matches.html" class="nav-link">My Matches</a>
+                <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+                <a href="profile.html" class="nav-link">Profile</a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-login" id="authButton">Login</button>
+            </div>
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
     </nav>
 
     <!-- Tournaments Header -->
@@ -133,16 +152,5 @@
     <script src="js/auth.js"></script>
     <script src="js/navigation.js"></script>
     <script src="js/tournaments.js"></script>
-    <style>
-        /* Add some spacing below the fixed navbar */
-        .page-header {
-            padding-top: 100px;
-        }
-        
-        /* Ensure content doesn't get hidden behind navbar */
-        body {
-            padding-top: 70px;
-        }
-    </style>
 </body>
 </html>
