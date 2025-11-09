@@ -28,11 +28,28 @@ class NavigationManager {
 
         // Close mobile menu when clicking outside
         document.addEventListener('click', (e) => {
+            // Handle modal close when clicking outside
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal && loginModal.style.display === 'block' && e.target === loginModal) {
+                this.hideModal(loginModal);
+            }
+            
+            // Handle mobile menu close when clicking outside
             if (this.mobileMenuOpen && 
                 !this.navMenu.contains(e.target) && 
                 !this.mobileMenuBtn.contains(e.target)) {
                 this.closeMobileMenu();
             }
+        });
+
+        // Close modals when clicking the close button
+        document.querySelectorAll('.modal .close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', () => {
+                const modal = closeBtn.closest('.modal');
+                if (modal) {
+                    this.hideModal(modal);
+                }
+            });
         });
 
         // Close mobile menu when clicking on a nav link
@@ -58,6 +75,16 @@ class NavigationManager {
         window.addEventListener('resize', () => {
             if (window.innerWidth > 768) {
                 this.closeMobileMenu();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const activeModal = document.querySelector('.modal[style*="display: block"]');
+                if (activeModal) {
+                    this.hideModal(activeModal);
+                }
             }
         });
     }
@@ -94,17 +121,35 @@ class NavigationManager {
             this.navMenu.style.boxShadow = 'none';
         }
     }
+    
+    /**
+     * Hides a modal and restores body scrolling
+     * @param {HTMLElement} modal - The modal element to hide
+     */
+    hideModal(modal) {
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    }
 
     handleAuthButtonClick() {
         const token = localStorage.getItem('token');
         if (token) {
-            // User is logged in, show logout confirmation or profile
+            // User is logged in, show logout confirmation
             if (confirm('Are you sure you want to log out?')) {
                 AuthManager.logout();
             }
         } else {
-            // User is not logged in, redirect to login
-            window.location.href = 'index.html#login';
+            // User is not logged in, show login modal
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                loginModal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            } else {
+                // Fallback to redirect if modal not found
+                window.location.href = 'index.html#login';
+            }
         }
     }
 
