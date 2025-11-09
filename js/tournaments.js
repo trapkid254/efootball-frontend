@@ -8,6 +8,7 @@ class TournamentsPage {
             fee: 'all'
         };
         this.init();
+        this.setupModal();
     }
 
     init() {
@@ -293,10 +294,7 @@ class TournamentsPage {
                 return;
             }
 
-            const modal = document.getElementById('tournamentDetailsModal');
-            const content = document.getElementById('tournamentDetailsContent');
-            
-            content.innerHTML = `
+            this.modalContent.innerHTML = `
                 <div class="tournament-details">
                     <div class="details-header">
                         <h2>${tournament.name}</h2>
@@ -336,7 +334,7 @@ class TournamentsPage {
                     </div>
                     
                     <div class="details-actions">
-                        <button class="btn-secondary" onclick="this.closest('.modal').style.display='none'">Close</button>
+                        <button class="btn-secondary close-modal">Close</button>
                         <button class="btn-primary join-from-details" data-id="${tournament._id}">
                             ${(tournament.entryFee || tournament.settings?.entryFee || 0) > 0 ? `Join Tournament - KSh ${(tournament.entryFee || tournament.settings?.entryFee)}` : 'Join Tournament Free'}
                         </button>
@@ -344,13 +342,17 @@ class TournamentsPage {
                 </div>
             `;
 
-            // Add event listener to join button in modal
-            content.querySelector('.join-from-details').addEventListener('click', (e) => {
+            // Add event listeners
+            this.modalContent.querySelector('.join-from-details').addEventListener('click', () => {
                 this.handleJoinTournament(tournamentId);
-                modal.style.display = 'none';
+                this.closeModal();
             });
+            
+            this.modalContent.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
 
-            modal.style.display = 'block';
+            // Show the modal
+            this.modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
 
         } catch (error) {
             console.error('Error loading tournament details:', error);
