@@ -167,8 +167,26 @@
 /* Modal Styles for Admin */
 .modal-content.large {
     max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
 }
 
+.modal-content.large h2 {
+    margin-top: 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-content.large form {
+    overflow-y: auto;
+    padding-right: 1rem;
+    margin-right: -1rem;
+    padding-right: 1rem;
+    max-height: calc(90vh - 100px);
+}
+
+/* Form Styles */
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
