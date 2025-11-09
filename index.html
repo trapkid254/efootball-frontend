@@ -15,7 +15,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <div class="logo-placeholder">TK</div>
+                <img src="assets/images/ChatGPT%20Image%20Nov%207,%202025,%2005_03_54%20PM.png" alt="Tona Kikwetu Logo" class="site-logo">
                 <span>TONA KIKWETU</span>
             </div>
             <div class="nav-menu">
@@ -39,55 +39,31 @@
         <div class="hero-content">
             <h1>Compete. Win. Dominate.</h1>
             <p>Join Kenya's premier Efootball Mobile tournament platform. Register now and showcase your skills!</p>
-            <div class="hero-stats">
-                <div class="stat">
-                    <h3>500+</h3>
-                    <p>Active Players</p>
-                </div>
-                <div class="stat">
-                    <h3>50+</h3>
-                    <p>Tournaments</p>
-                </div>
-                <div class="stat">
-                    <h3>KSh 200K+</h3>
-                    <p>Total Prizes</p>
-                </div>
+            <div id="heroStats" class="hero-stats">
+                <!-- Stats will be loaded dynamically -->
             </div>
             <div class="hero-buttons">
-                <button class="btn-primary" id="joinTournament">Join Tournament</button>
-                <button class="btn-secondary" id="learnMore">Learn More</button>
+                <a href="tournaments.html" class="btn-primary">View Tournaments</a>
+                <a href="#how-it-works" class="btn-secondary">How It Works</a>
             </div>
         </div>
-        <div class="hero-banner">
-            <div class="banner-card">
-                <div class="banner-header">
-                    <span class="featured-tag">FEATURED</span>
-                    <span class="prize-tag">KSh 15,000</span>
-                </div>
-                <h3>Grand Championship January</h3>
-                <p>64 Players • Knockout Format • Entry: KSh 200</p>
-                <div class="banner-footer">
-                    <span>Starts: Jan 20, 2024</span>
-                    <button class="btn-banner">Register Now</button>
-                </div>
-            </div>
+        <div class="hero-banner" id="featuredTournament">
+            <!-- Featured tournament will be loaded dynamically -->
         </div>
     </section>
 
-    <!-- Active Tournaments -->
+    <!-- Tournaments Section -->
     <section class="tournaments-section" id="tournaments">
         <div class="container">
             <h2>Active Tournaments</h2>
-            <div class="section-header">
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="active">Active</button>
-                    <button class="filter-btn" data-filter="upcoming">Upcoming</button>
-                    <button class="filter-btn" data-filter="free">Free Entry</button>
+            <div id="tournamentsContainer">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading tournaments...</p>
                 </div>
             </div>
-            <div class="tournaments-grid" id="tournamentsGrid">
-                <!-- Tournament cards will be dynamically loaded -->
+            <div class="text-center" style="margin-top: 2rem;">
+                <a href="tournaments.html" class="btn-primary">View All Tournaments</a>
             </div>
         </div>
     </section>
@@ -96,16 +72,14 @@
     <section class="leaderboard-section" id="leaderboard">
         <div class="container">
             <h2>Global Leaderboard</h2>
-            <div class="leaderboard-container">
-                <div class="leaderboard-header">
-                    <span>Rank</span>
-                    <span>Player</span>
-                    <span>Points</span>
-                    <span>Wins</span>
+            <div id="leaderboardContainer">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading leaderboard...</p>
                 </div>
-                <div class="leaderboard-list" id="leaderboardList">
-                    <!-- Leaderboard items will be loaded here -->
-                </div>
+            </div>
+            <div class="text-center" style="margin-top: 2rem;">
+                <a href="leaderboard.html" class="btn-primary">View Full Leaderboard</a>
             </div>
         </div>
     </section>

@@ -78,6 +78,17 @@ body {
     color: var(--accent-color);
 }
 
+.site-logo {
+    height: 40px;
+    width: auto;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+.site-logo:hover {
+    transform: scale(1.05);
+}
+
 .logo-placeholder {
     width: 40px;
     height: 40px;
@@ -715,16 +726,31 @@ body {
 }
 
 .modal-content {
-    background-color: var(--card-bg);
-    margin: 10% auto;
-    padding: 3rem;
+    background: var(--bg-secondary);
     border-radius: var(--border-radius);
-    width: 90%;
-    max-width: 450px;
+    width: 100%;
+    max-width: 500px;
     position: relative;
+    overflow: hidden;
     box-shadow: var(--shadow);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    animation: modalSlideIn 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../../assets/images/ChatGPT%20Image%20Nov%207,%202025,%2005_03_54%20PM.png');
+    background-size: 200px;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.1;
+    z-index: -1;
+    pointer-events: none;
 }
 
 @keyframes modalSlideIn {
