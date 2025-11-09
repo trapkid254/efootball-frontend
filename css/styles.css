@@ -51,13 +51,19 @@ body {
 .navbar {
     background: rgba(26, 26, 46, 0.95);
     backdrop-filter: blur(10px);
-    padding: 1rem 0;
+    -webkit-backdrop-filter: blur(10px);
+    padding: 0.8rem 0;
     position: fixed;
     width: 100%;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1000;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    height: 70px; /* Fixed height for consistent spacing */
+    display: flex;
+    align-items: center;
 }
 
 .nav-container {
@@ -402,10 +408,14 @@ body {
 
 /* Tournaments Section */
 /* Fix for navbar overlap */
+body {
+    padding-top: 70px; /* Height of the navbar */
+}
+
 .tournaments-page {
-    padding: 7rem 0 4rem; /* Added top padding to account for fixed navbar */
+    min-height: calc(100vh - 70px); /* Full height minus navbar */
     background: var(--bg-primary);
-    min-height: calc(100vh - 60px); /* Ensure full height minus navbar */
+    position: relative;
 }
 
 /* Filters Section */
@@ -413,10 +423,11 @@ body {
     background: var(--bg-secondary);
     padding: 1.5rem 0;
     position: sticky;
-    top: 60px; /* Height of the navbar */
+    top: 70px; /* Height of the navbar */
     z-index: 100;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: -1px; /* Prevents 1px gap on some browsers */
 }
 
 .filters {
