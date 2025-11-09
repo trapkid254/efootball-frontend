@@ -139,16 +139,33 @@ class NavigationManager {
         if (token) {
             // User is logged in, show logout confirmation
             if (confirm('Are you sure you want to log out?')) {
-                AuthManager.logout();
+                if (typeof AuthManager !== 'undefined' && typeof AuthManager.logout === 'function') {
+                    AuthManager.logout();
+                } else {
+                    // Fallback logout if AuthManager is not available
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.reload();
+                }
             }
             return;
         }
 
-        // User is not logged in, show login modal
+        // Check if we're on the index page
+        const isIndexPage = window.location.pathname.endsWith('index.html') || 
+                           window.location.pathname.endsWith('/') ||
+                           window.location.pathname === '';
+
+        // If not on index page, redirect to index with login hash
+        if (!isIndexPage) {
+            window.location.href = 'index.html#login';
+            return;
+        }
+
+        // On index page, show the login modal
         const loginModal = document.getElementById('loginModal');
         if (!loginModal) {
             console.error('Login modal not found!');
-            window.location.href = 'index.html#login';
             return;
         }
 
@@ -189,13 +206,14 @@ class NavigationManager {
                     cursor: pointer;
                     color: var(--text-primary);
                     text-decoration: none;
+                    z-index: 1001;
                 }
                 .close:hover {
                     color: var(--accent-color);
                 }
                 .modal-open {
                     overflow: hidden;
-                    padding-right: 15px; /* Prevent content shift when scrollbar disappears */
+                    padding-right: 15px;
                 }
                 @media (max-width: 768px) {
                     .modal-content {
@@ -220,6 +238,12 @@ class NavigationManager {
         const firstInput = loginModal.querySelector('input');
         if (firstInput) {
             setTimeout(() => firstInput.focus(), 100);
+        }
+        
+        // Prevent default and stop propagation
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
 
