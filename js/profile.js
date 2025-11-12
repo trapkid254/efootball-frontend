@@ -316,13 +316,42 @@ class ProfileManager {
     updateAvatarUI() {
         const userAvatar = document.getElementById('userAvatar');
         if (!userAvatar) return;
-
-        if (this.currentUser.avatarUrl) {
-            userAvatar.style.backgroundImage = `url(${this.currentUser.avatarUrl})`;
-            userAvatar.textContent = '';
+        
+        if (this.currentUser?.avatarUrl) {
+            let avatarUrl = this.currentUser.avatarUrl;
+            
+            // If it's a relative URL, make it absolute
+            if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                const baseUrl = window.API_BASE_URL || '';
+                avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+            }
+            
+            // Add cache-busting parameter
+            const separator = avatarUrl.includes('?') ? '&' : '?';
+            const timestamp = new Date().getTime();
+            avatarUrl = `${avatarUrl}${separator}t=${timestamp}`;
+            
+            // Create a new image to handle CORS properly
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = () => {
+                userAvatar.style.backgroundImage = `url(${avatarUrl})`;
+                userAvatar.style.backgroundSize = 'cover';
+                userAvatar.style.backgroundPosition = 'center';
+                userAvatar.textContent = '';
+            };
+            
+            img.onerror = () => {
+                console.error('Failed to load avatar, falling back to initials');
+                userAvatar.style.backgroundImage = '';
+                userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+            };
+            
+            img.src = avatarUrl;
         } else {
             userAvatar.style.backgroundImage = '';
-            userAvatar.textContent = (this.currentUser.efootballId || 'U').charAt(0).toUpperCase();
+            userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
         }
     }
 
