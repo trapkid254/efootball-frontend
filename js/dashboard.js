@@ -92,72 +92,153 @@ class Dashboard {
     }
 
     async loadUpcomingMatches() {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const matches = [
-            {
-                id: 1,
-                opponent: 'ProGamerKE',
-                tournament: 'Weekly Champions Cup',
-                time: 'Today, 20:00',
-                round: 'Round of 16'
-            },
-            {
-                id: 2,
-                opponent: 'EfootballKing',
-                tournament: 'Monthly Grand Tournament',
-                time: 'Tomorrow, 19:00',
-                round: 'Group Stage'
-            }
-        ];
+        try {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/matches/upcoming`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        const container = document.getElementById('upcomingMatches');
-        container.innerHTML = matches.map(match => `
-            <div class="match-item">
-                <div class="match-info">
-                    <h4>vs ${match.opponent}</h4>
-                    <p>${match.tournament} • ${match.round}</p>
+            if (!response.ok) {
+                throw new Error('Failed to fetch upcoming matches');
+            }
+
+            const data = await response.json();
+            const matches = data.matches || [];
+            const container = document.getElementById('upcomingMatches');
+
+            if (matches.length === 0) {
+                container.innerHTML = '<p class="empty-state">No upcoming matches</p>';
+                return;
+            }
+
+            container.innerHTML = matches.map(match => {
+                const matchDate = new Date(match.scheduledTime);
+                const now = new Date();
+                const timeDiff = matchDate - now;
+                const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                
+                let timeDisplay;
+                if (daysDiff === 0) {
+                    timeDisplay = 'Today';
+                } else if (daysDiff === 1) {
+                    timeDisplay = 'Tomorrow';
+                } else if (daysDiff < 7) {
+                    timeDisplay = matchDate.toLocaleDateString('en-US', { weekday: 'long' });
+                } else {
+                    timeDisplay = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }
+                
+                timeDisplay += `, ${matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+                
+                // Determine opponent
+                let opponentName = 'TBD';
+                if (match.player1 && match.player1._id !== this.currentUser._id) {
+                    opponentName = match.player1.efootballId;
+                } else if (match.player2 && match.player2._id !== this.currentUser._id) {
+                    opponentName = match.player2.efootballId;
+                }
+                
+                return `
+                    <div class="match-item">
+                        <div class="match-info">
+                            <h4>vs ${opponentName}</h4>
+                            <p>${match.tournament?.name || 'Tournament'} • ${match.round || 'Match'}</p>
+                        </div>
+                        <div class="match-time">${timeDisplay}</div>
+                    </div>
+                `;
+            }).join('');
+            
+        } catch (error) {
+            console.error('Error loading upcoming matches:', error);
+            const container = document.getElementById('upcomingMatches');
+            container.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Failed to load matches</p>
+                    <button class="btn-retry" onclick="window.dashboard.loadUpcomingMatches()">
+                        <i class="fas fa-sync-alt"></i> Try Again
+                    </button>
                 </div>
-                <div class="match-time">${match.time}</div>
-            </div>
-        `).join('') || '<p class="empty-state">No upcoming matches</p>';
+            `;
+        }
     }
 
     async loadActiveTournaments() {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const tournaments = [
-            {
-                id: 1,
-                name: 'Weekly Champions Cup',
-                progress: '24/32',
-                prize: 'KSh 5,000',
-                nextMatch: 'Round of 16'
-            },
-            {
-                id: 2,
-                name: 'Monthly Grand Tournament',
-                progress: 'Group Stage',
-                prize: 'KSh 15,000',
-                nextMatch: 'Match 3'
-            }
-        ];
+        try {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/tournaments/active`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        const container = document.getElementById('activeTournaments');
-        container.innerHTML = tournaments.map(tournament => `
-            <div class="tournament-item">
-                <h4>${tournament.name}</h4>
-                <div class="tournament-meta">
-                    <span>Progress: ${tournament.progress}</span>
-                    <span class="tournament-prize">${tournament.prize}</span>
+            if (!response.ok) {
+                throw new Error('Failed to fetch active tournaments');
+            }
+
+            const data = await response.json();
+            const tournaments = data.tournaments || [];
+            const container = document.getElementById('activeTournaments');
+
+            if (tournaments.length === 0) {
+                container.innerHTML = '<p class="empty-state">No active tournaments</p>';
+                return;
+            }
+
+            container.innerHTML = await Promise.all(tournaments.map(async tournament => {
+                // Get tournament progress
+                let progressText = 'Not Started';
+                if (tournament.status === 'in_progress') {
+                    const participantsCount = tournament.participants?.length || 0;
+                    const maxParticipants = tournament.maxParticipants || 0;
+                    progressText = `${participantsCount}/${maxParticipants}`;
+                } else if (tournament.status === 'completed') {
+                    progressText = 'Completed';
+                }
+
+                // Get next match info if available
+                let nextMatchInfo = 'Check Bracket';
+                if (tournament.nextMatch) {
+                    const matchDate = new Date(tournament.nextMatch.scheduledTime);
+                    nextMatchInfo = `Next: ${matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                }
+
+                // Format prize
+                const prizeText = tournament.prizePool 
+                    ? `KSh ${Number(tournament.prizePool).toLocaleString()}`
+                    : 'No Prize';
+
+                return `
+                    <div class="tournament-item" data-tournament-id="${tournament._id}">
+                        <h4>${tournament.name}</h4>
+                        <div class="tournament-meta">
+                            <span>Progress: ${progressText}</span>
+                            <span class="tournament-prize">${prizeText}</span>
+                        </div>
+                        <div class="tournament-meta">
+                            <span>${nextMatchInfo}</span>
+                            <a href="tournament.html?id=${tournament._id}" class="view-tournament">View</a>
+                        </div>
+                    </div>
+                `;
+            })).then(html => html.join(''));
+            
+        } catch (error) {
+            console.error('Error loading active tournaments:', error);
+            const container = document.getElementById('activeTournaments');
+            container.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Failed to load tournaments</p>
+                    <button class="btn-retry" onclick="window.dashboard.loadActiveTournaments()">
+                        <i class="fas fa-sync-alt"></i> Try Again
+                    </button>
                 </div>
-                <div class="tournament-meta">
-                    <span>Next: ${tournament.nextMatch}</span>
-                </div>
-            </div>
-        `).join('') || '<p class="empty-state">No active tournaments</p>';
+            `;
+        }
     }
 
     async loadRecentActivity() {
