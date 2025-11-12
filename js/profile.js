@@ -312,71 +312,30 @@ class ProfileManager {
             }
 
 
-            // Get the response as blob first
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
-
-            // Update the UI immediately with the blob URL
-            if (userAvatar) {
-                this.setAvatarImage(userAvatar, objectUrl);
-            }
-
-            // Try to get the server URL from the response
-            try {
-                const result = await response.clone().json();
-                if (result?.avatarUrl) {
-                    // Store the server URL for future use
-                    const serverAvatarUrl = result.avatarUrl.startsWith('http') 
-                        ? result.avatarUrl 
-                        : `${window.API_BASE_URL || ''}${result.avatarUrl.startsWith('/') ? '' : '/'}${result.avatarUrl}`;
-
-                    // Update the current user data with server URL
-                    this.currentUser.avatarUrl = serverAvatarUrl;
-
-                    // Also keep the blob URL for immediate display
-                    this.currentUser.avatarBlobUrl = objectUrl;
-
-                    // In the background, try to load the server URL
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    img.onload = () => {
-                        // If server URL loads successfully, update the UI
-                        if (userAvatar) {
-                            this.setAvatarImage(userAvatar, serverAvatarUrl);
-                        }
-                        // Clean up the blob URL
-                        URL.revokeObjectURL(objectUrl);
-                        delete this.currentUser.avatarBlobUrl;
-                    };
-                    img.onerror = () => {
-                        console.log('Could not load avatar from server URL, keeping blob URL');
-                    };
-                    img.src = serverAvatarUrl;
-
-                    // Update local storage
-                    const user = JSON.parse(localStorage.getItem('user') || '{}');
-                    user.avatarUrl = this.currentUser.avatarUrl;
-                    user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
-                    localStorage.setItem('user', JSON.stringify(user));
-
-                    this.showNotification('✅ Profile picture updated successfully!', 'success');
-                    return; // Exit early since we've handled the success case
+            // Get the response as JSON
+            const result = await response.json();
+            
+            if (result.avatar) {
+                // Construct the full avatar URL
+                const serverAvatarUrl = `${window.API_BASE_URL || ''}/uploads/avatars/${result.avatar}`;
+                
+                // Update the current user data
+                this.currentUser.avatarUrl = serverAvatarUrl;
+                
+                // Update the UI with the new avatar
+                if (userAvatar) {
+                    this.setAvatarImage(userAvatar, serverAvatarUrl);
                 }
-            } catch (e) {
-                console.log('Could not parse server response, using blob URL', e);
+                
+                // Update local storage
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.avatarUrl = serverAvatarUrl;
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                this.showNotification('✅ Profile picture updated successfully!', 'success');
+            } else {
+                throw new Error('No avatar URL returned from server');
             }
-
-            // If we get here, we couldn't get a server URL, so just use the blob URL
-            this.currentUser.avatarUrl = objectUrl;
-            this.currentUser.avatarBlobUrl = objectUrl;
-
-            // Update local storage
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            user.avatarUrl = this.currentUser.avatarUrl;
-            user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
-            localStorage.setItem('user', JSON.stringify(user));
-
-            this.showNotification('✅ Profile picture updated successfully!', 'success');
         } catch (error) {
             if (error instanceof SyntaxError) {
                 console.log('Could not parse JSON response, using blob URL');
