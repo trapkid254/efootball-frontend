@@ -62,19 +62,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             try {
-                // Prepare request body - try with both fields set to the identifier
-                // to cover cases where either whatsapp or efootballId is used for login
-                const body = {
-                    whatsapp: identifier,
-                    efootballId: identifier,
-                    password: password
-                };
+                // Determine if the identifier is a phone number or efootball ID
+                const isPhoneNumber = /^\d+$/.test(identifier);
                 
-                console.log('Login attempt with:', { 
-                    whatsapp: identifier, 
-                    efootballId: identifier,
-                    hasPassword: !!password 
-                });
+                // Prepare request body with only the relevant field
+                const body = isPhoneNumber 
+                    ? { whatsapp: identifier, password }
+                    : { efootballId: identifier, password };
+                
+                console.log('Login attempt with:', body);
 
                 // Determine API base URL
                 const apiBase = window.API_BASE_URL || '';
@@ -82,37 +78,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Make the API request
                 let response;
                 try {
-                    // First try with the exact credentials
+                    console.log('Sending login request to:', `${apiBase}/api/auth/login`);
                     response = await fetch(`${apiBase}/api/auth/login`, {
                         method: 'POST',
                         headers: { 
                             'Content-Type': 'application/json',
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify(body)
+                        body: JSON.stringify(body),
+                        credentials: 'include' // Important for cookies/sessions
                     });
                     
-                    // If first attempt fails, try with just whatsapp
-                    if (!response.ok) {
-                        console.log('First attempt failed, trying with just whatsapp...');
-                        const whatsappBody = { whatsapp: identifier, password };
-                        response = await fetch(`${apiBase}/api/auth/login`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(whatsappBody)
-                        });
-                    }
-                    
-                    // If still failing, try with just efootballId
-                    if (!response.ok) {
-                        console.log('Second attempt failed, trying with just efootballId...');
-                        const efootballBody = { efootballId: identifier, password };
-                        response = await fetch(`${apiBase}/api/auth/login`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(efootballBody)
-                        });
-                    }
+                    console.log('Login response status:', response.status);
                     
                 } catch (networkError) {
                     console.error('Network error:', networkError);
