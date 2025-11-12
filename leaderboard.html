@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard - TONA KIKWETU</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/leaderboard.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="dark-theme">
@@ -40,23 +41,34 @@
     <!-- Leaderboard Filter -->
     <section class="filters-section">
         <div class="container">
-            <div class="filters">
-                <div class="filter-group">
-                    <label>Leaderboard:</label>
-                    <select id="leaderboardType">
-                        <option value="global">Global Ranking</option>
-                        <option value="monthly">Monthly Ranking</option>
-                        <option value="weekly">Weekly Ranking</option>
+            <div class="filters" id="leaderboardFilters">
+                <!-- Tournament Selector (will be populated by JavaScript) -->
+                <div id="tournamentSelector" class="filter-group">
+                    <label for="tournamentSelect">Tournament:</label>
+                    <select id="tourboardType" class="tournament-select">
+                        <option value="global">Global Leaderboard</option>
+                        <!-- Tournaments will be loaded here -->
                     </select>
                 </div>
+                
                 <div class="filter-group">
-                    <label>Platform:</label>
+                    <label for="leaderboardType">Time Frame:</label>
+                    <select id="leaderboardType">
+                        <option value="global">All Time</option>
+                        <option value="monthly">This Month</option>
+                        <option value="weekly">This Week</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="platformFilter">Platform:</label>
                     <select id="platformFilter">
                         <option value="all">All Platforms</option>
                         <option value="mobile">Mobile</option>
+                        <option value="console">Console</option>
+                        <option value="pc">PC</option>
                     </select>
                 </div>
-                <button class="btn-primary" id="applyFilters">Apply Filters</button>
             </div>
         </div>
     </section>
@@ -64,11 +76,27 @@
     <!-- Leaderboard Content -->
     <section class="leaderboard-content">
         <div class="container">
-            <!-- Top 3 Players -->
+            <!-- Top 3 Players (Podium) -->
             <div class="top-players" id="topPlayers">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading top players...</p>
+                <div class="podium-container">
+                    <div class="podium-place second">
+                        <div class="podium-rank">2</div>
+                        <div class="podium-avatar">B</div>
+                        <div class="podium-name">Loading...</div>
+                        <div class="podium-points">0 pts</div>
+                    </div>
+                    <div class="podium-place first">
+                        <div class="podium-rank">1</div>
+                        <div class="podium-avatar">A</div>
+                        <div class="podium-name">Loading...</div>
+                        <div class="podium-points">0 pts</div>
+                    </div>
+                    <div class="podium-place third">
+                        <div class="podium-rank">3</div>
+                        <div class="podium-avatar">C</div>
+                        <div class="podium-name">Loading...</div>
+                        <div class="podium-points">0 pts</div>
+                    </div>
                 </div>
             </div>
 
@@ -88,9 +116,11 @@
 
             <!-- User Position -->
             <div class="user-position" id="userPosition" style="display: none;">
-                <h3>Your Position</h3>
-                <div class="leaderboard-item user-item">
-                    <!-- User's position will be loaded here -->
+                <div class="container">
+                    <h3>Your Position</h3>
+                    <div class="leaderboard-item user-item">
+                        <!-- User's position will be loaded here -->
+                    </div>
                 </div>
             </div>
 
@@ -113,7 +143,8 @@
         </div>
     </section>
 
-    <script src="js/auth.js"></script>
+    <!-- Scripts -->
+    <script src="js/theme.js"></script>
     <script src="js/leaderboard.js"></script>
 </body>
 </html>
