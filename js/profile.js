@@ -252,51 +252,49 @@ class ProfileManager {
     }
 
     async handleAvatarUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // Validate file type
-        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-        if (!validTypes.includes(file.type)) {
-            this.showNotification('❌ Invalid file type. Please upload a JPEG, PNG, or GIF image.', 'error');
-            return;
-        }
-
-        // Validate file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.size > maxSize) {
-            this.showNotification(`❌ Image size (${this.formatFileSize(file.size)}) exceeds the 10MB limit`, 'error');
-            return;
-        }
-        
-        // Show loading state
-        const uploadBtn = document.getElementById('avatarUploadBtn');
-        const originalHTML = uploadBtn.innerHTML;
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-
         try {
-            // Create form data
+            const fileInput = event.target;
+            const file = fileInput.files[0];
+            const userAvatar = document.getElementById('userAvatar');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!file) return;
+
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                this.showNotification('Please upload a valid image file (JPEG, PNG, or GIF)', 'error');
+                return;
+            }
+
+            // Validate file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                this.showNotification('Image size should be less than 10MB', 'error');
+                return;
+            }
+
             const formData = new FormData();
             formData.append('avatar', file);
-            
+
+            // Show loading state
+            if (uploadBtn) {
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = 'Uploading...';
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (userAvatar) {
+                    userAvatar.style.backgroundImage = `url(${e.target.result})`;
+                }
+            };
+            reader.readAsDataURL(file);
+
+            // Upload to server
             const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Session expired. Please log in again.');
-            }
-
-            // Show preview from local file first
-            const previewUrl = URL.createObjectURL(file);
-            const userAvatar = document.getElementById('userAvatar');
-            if (userAvatar) {
-                userAvatar.style.backgroundImage = `url(${previewUrl})`;
-                userAvatar.style.backgroundSize = 'cover';
-                userAvatar.style.backgroundPosition = 'center';
-                userAvatar.textContent = '';
-            }
-
-            // Upload to server and get the response
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/me/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -309,107 +307,84 @@ class ProfileManager {
                 throw new Error(errorData.message || 'Failed to upload avatar. The server returned an error.');
             }
 
-            // Get the server response
-            const result = await response.json();
-            
-            if (result && result.avatarUrl) {
-                // Store the server URL
-                const serverAvatarUrl = result.avatarUrl.startsWith('http') 
-                    ? result.avatarUrl 
-                    : `${window.API_BASE_URL || ''}${result.avatarUrl.startsWith('/') ? '' : '/'}${result.avatarUrl}`;
-                
-                // Update the current user data
-                this.currentUser.avatarUrl = serverAvatarUrl;
-                
-                // Update the UI with the new avatar
-                if (userAvatar) {
-                    // First try to load the server URL
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    
-                    try {
-                        // Try to load the server URL
-                        await new Promise((resolve, reject) => {
-                            img.onload = resolve;
-                            img.onerror = () => reject(new Error('Failed to load image'));
-                            img.src = serverAvatarUrl;
-                        });
-                        
-                        // If we get here, the server URL works
-                        this.setAvatarImage(userAvatar, serverAvatarUrl);
-                    } catch (e) {
-                        console.log('Could not load avatar from server URL, using blob URL');
-                        // Fall back to blob URL if server URL fails
-                        const blob = await response.blob();
-                        const objectUrl = URL.createObjectURL(blob);
-                        this.currentUser.avatarBlobUrl = objectUrl;
-                        this.setAvatarImage(userAvatar, objectUrl);
-                    }
-                }
-                
-                // Update local storage
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                user.avatarUrl = this.currentUser.avatarUrl;
-                if (this.currentUser.avatarBlobUrl) {
-                    user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
-                }
-                localStorage.setItem('user', JSON.stringify(user));
-            } else {
-                // Fallback if no avatarUrl in response
-                const blob = await response.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                this.currentUser.avatarBlobUrl = objectUrl;
-                if (userAvatar) {
-                    this.setAvatarImage(userAvatar, objectUrl);
-                }
-                
-                // Update local storage
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                user.avatarBlobUrl = objectUrl;
-                localStorage.setItem('user', JSON.stringify(user));
+            // Get the response as blob first
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+
+            // Update the UI immediately with the blob URL
+            if (userAvatar) {
+                this.setAvatarImage(userAvatar, objectUrl);
             }
-            
-            this.showNotification('✅ Profile picture updated successfully!', 'success');
-            
-            // In the background, try to get the permanent URL from the server
+
+            // Try to get the server URL from the response
             try {
                 const result = await response.clone().json();
-                if (result && result.avatarUrl) {
+                if (result?.avatarUrl) {
                     // Store the server URL for future use
-                    this.currentUser.avatarUrl = result.avatarUrl;
-                    const user = JSON.parse(localStorage.getItem('user') || '{}');
-                    user.avatarUrl = result.avatarUrl;
-                    localStorage.setItem('user', JSON.stringify(user));
-                    
-                    // Try to preload the server URL
+                    const serverAvatarUrl = result.avatarUrl.startsWith('http') 
+                        ? result.avatarUrl 
+                        : `${window.API_BASE_URL || ''}${result.avatarUrl.startsWith('/') ? '' : '/'}${result.avatarUrl}`;
+
+                    // Update the current user data with server URL
+                    this.currentUser.avatarUrl = serverAvatarUrl;
+
+                    // Also keep the blob URL for immediate display
+                    this.currentUser.avatarBlobUrl = objectUrl;
+
+                    // In the background, try to load the server URL
                     const img = new Image();
-                    img.onload = function() {
-                        // If it loads successfully, update to use the server URL
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        // If server URL loads successfully, update the UI
                         if (userAvatar) {
-                            userAvatar.style.backgroundImage = `url(${result.avatarUrl})`;
-                            // Clean up the blob URL if it exists
-                            if (objectUrl) {
-                                URL.revokeObjectURL(objectUrl);
-                            }
+                            this.setAvatarImage(userAvatar, serverAvatarUrl);
                         }
+                        // Clean up the blob URL
+                        URL.revokeObjectURL(objectUrl);
+                        delete this.currentUser.avatarBlobUrl;
                     };
-                    img.onerror = function() {
-                        console.log('Could not load avatar from server URL');
+                    img.onerror = () => {
+                        console.log('Could not load avatar from server URL, keeping blob URL');
                     };
-                    img.src = result.avatarUrl;
+                    img.src = serverAvatarUrl;
+
+                    // Update local storage
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    user.avatarUrl = this.currentUser.avatarUrl;
+                    user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
+                    localStorage.setItem('user', JSON.stringify(user));
+
+                    this.showNotification('✅ Profile picture updated successfully!', 'success');
+                    return; // Exit early since we've handled the success case
                 }
             } catch (e) {
-                console.log('Could not parse JSON response, using blob URL');
+                console.log('Could not parse server response, using blob URL', e);
             }
+
+            // If we get here, we couldn't get a server URL, so just use the blob URL
+            this.currentUser.avatarUrl = objectUrl;
+            this.currentUser.avatarBlobUrl = objectUrl;
+
+            // Update local storage
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            user.avatarUrl = this.currentUser.avatarUrl;
+            user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
+            localStorage.setItem('user', JSON.stringify(user));
+
+            this.showNotification('✅ Profile picture updated successfully!', 'success');
         } catch (error) {
-            console.error('Error uploading avatar:', error);
-            this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
-            
-            // Revert to default avatar on error
-            const userAvatar = document.getElementById('userAvatar');
-            if (userAvatar) {
-                userAvatar.style.backgroundImage = '';
-                userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+            if (error instanceof SyntaxError) {
+                console.log('Could not parse JSON response, using blob URL');
+            } else {
+                console.error('Error uploading avatar:', error);
+                this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
+                
+                // Revert to default avatar on error
+                const userAvatar = document.getElementById('userAvatar');
+                if (userAvatar) {
+                    userAvatar.style.backgroundImage = '';
+                    userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+                }
             }
         } finally {
             // Reset the file input and button state
@@ -428,7 +403,7 @@ class ProfileManager {
         // First, try to use the blob URL if available (from recent upload)
         if (this.currentUser?.avatarBlobUrl) {
             this.setAvatarImage(userAvatar, this.currentUser.avatarBlobUrl);
-            return;
+            // Don't return here, try to load the server URL in the background
         }
         
         if (this.currentUser?.avatarUrl) {
@@ -509,7 +484,9 @@ class ProfileManager {
                         resolve(null);
                     }
                 };
-                xhr.onerror = () => resolve(null);
+                xhr.onerror = function() {
+                    resolve(null);
+                };
                 xhr.send();
             } else {
                 // Try with anonymous CORS first
@@ -522,20 +499,63 @@ class ProfileManager {
     }
     
     setAvatarImage(element, imageUrl) {
-        element.style.backgroundImage = `url(${imageUrl})`;
+        if (!element || !imageUrl) return;
+        
+        // If it's a blob URL or data URL, use it directly
+        if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
+            element.style.backgroundImage = `url(${imageUrl})`;
+        } else {
+            // For server URLs, add cache-busting parameter
+            const separator = imageUrl.includes('?') ? '&' : '?';
+            const timestamp = new Date().getTime();
+            const urlWithCacheBust = `${imageUrl}${separator}t=${timestamp}`;
+            
+            // Try to load with CORS first
+            const img = new Image();
+            const self = this;
+            
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = function() {
+                element.style.backgroundImage = `url(${urlWithCacheBust})`;
+            };
+            
+            img.onerror = function() {
+                // If CORS fails, try without CORS
+                console.log('CORS failed, trying without CORS');
+                const imgNoCors = new Image();
+                imgNoCors.onload = function() {
+                    element.style.backgroundImage = `url(${urlWithCacheBust})`;
+                };
+                imgNoCors.onerror = function() {
+                    console.error('Failed to load avatar image');
+                    this.showInitials(element);
+                }.bind(this);
+                imgNoCors.src = urlWithCacheBust;
+            }.bind(this);
+        }
+        
         element.style.backgroundSize = 'cover';
         element.style.backgroundPosition = 'center';
         element.textContent = '';
     }
     
     showInitials(element) {
+        if (!element) return;
         element.style.backgroundImage = '';
-        const username = this.currentUser && this.currentUser.efootballId ? this.currentUser.efootballId : 'U';
+        element.style.backgroundColor = '#e0e0e0';
+        element.style.display = 'flex';
+        element.style.alignItems = 'center';
+        element.style.justifyContent = 'center';
+        element.style.color = '#555';
+        element.style.fontWeight = 'bold';
+        element.style.fontSize = '24px';
+        
+        const username = this.currentUser && (this.currentUser.efootballId || this.currentUser.username || this.currentUser.email || 'U');
         element.textContent = username.charAt(0).toUpperCase();
     }
 
-    showNotification(message, type) {
-        type = type || 'info';
+    showNotification(message, type = 'info') {
         // Remove existing notifications
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
