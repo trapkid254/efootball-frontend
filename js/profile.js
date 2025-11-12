@@ -185,6 +185,14 @@ class ProfileManager {
         }
     }
 
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
     async handleAvatarUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -192,72 +200,88 @@ class ProfileManager {
         // Validate file type
         const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
         if (!validTypes.includes(file.type)) {
-            this.showNotification('Please upload a valid image (JPEG, PNG, or GIF)', 'error');
+            this.showNotification('❌ Invalid file type. Please upload a JPEG, PNG, or GIF image.', 'error');
             return;
         }
 
-        // Validate file size (max 2MB)
-        const maxSize = 2 * 1024 * 1024; // 2MB
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
         if (file.size > maxSize) {
-            this.showNotification('Image size should be less than 2MB', 'error');
+            this.showNotification(`❌ Image size (${this.formatFileSize(file.size)}) exceeds the 10MB limit`, 'error');
             return;
         }
-
+        
         // Show loading state
         const uploadBtn = document.getElementById('avatarUploadBtn');
-        const originalContent = uploadBtn.innerHTML;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        const originalHTML = uploadBtn.innerHTML;
         uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
         try {
+            // Create form data
+            const formData = new FormData();
+            formData.append('avatar', file);
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Session expired. Please log in again.');
+            }
+
             // Show preview
             const reader = new FileReader();
             reader.onload = (e) => {
                 const userAvatar = document.getElementById('userAvatar');
-                userAvatar.style.backgroundImage = `url(${e.target.result})`;
-                userAvatar.textContent = '';
+                if (userAvatar) {
+                    userAvatar.style.backgroundImage = `url(${e.target.result})`;
+                    userAvatar.style.backgroundSize = 'cover';
+                    userAvatar.style.backgroundPosition = 'center';
+                    userAvatar.textContent = '';
+                }
             };
             reader.readAsDataURL(file);
 
             // Upload to server
-            const formData = new FormData();
-            formData.append('avatar', file);
-
             const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: formData
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to upload avatar');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to upload avatar. The server returned an error.');
             }
 
             const result = await response.json();
-            this.currentUser.avatarUrl = result.avatarUrl;
+            this.currentUser = { ...this.currentUser, ...result };
             
             // Update user in local storage
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            user.avatarUrl = result.avatarUrl;
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify({ ...user, ...result }));
             
-            this.showNotification('Profile picture updated successfully!', 'success');
+            this.showNotification('✅ Profile picture updated successfully!', 'success');
         } catch (error) {
             console.error('Error uploading avatar:', error);
-            this.showNotification(error.message || 'Failed to upload avatar. Please try again.', 'error');
+            this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
             
             // Revert to default avatar on error
             const userAvatar = document.getElementById('userAvatar');
-            userAvatar.style.backgroundImage = '';
-            userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+            if (userAvatar) {
+                userAvatar.style.backgroundImage = '';
+                userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+            }
         } finally {
-            // Reset button state
+            // Reset the file input and button state
+            event.target.value = '';
             if (uploadBtn) {
-                uploadBtn.innerHTML = originalContent;
                 uploadBtn.disabled = false;
+                uploadBtn.innerHTML = originalHTML;
+            }
             }
             // Reset file input
             event.target.value = '';
