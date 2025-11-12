@@ -496,7 +496,6 @@ class ProfileManager {
         }
     } else {
         // No avatar URL found, show initials
-        console.log('No avatar URL found, showing initials');
         this.showInitials(userAvatar);
     }
 }
@@ -504,104 +503,101 @@ class ProfileManager {
 async setAvatarImage(element, imageUrl) {
     if (!element || !imageUrl) {
         console.log('setAvatarImage: Missing element or imageUrl');
-        return;
+        return Promise.reject('Missing element or imageUrl');
     }
-    
+            
     console.log('Setting avatar image:', imageUrl);
-    
-    try {
-        // First check if the image exists
-        const imageExists = await this.checkImageExists(imageUrl);
-        if (!imageExists) {
-            throw new Error('Image does not exist at the specified URL');
-        }
-        
-        // Create a new Image object to load the image
-        return new Promise((resolve, reject) => {
-            const img = new Image();
             
-            // Set crossOrigin to anonymous to handle CORS
-            img.crossOrigin = 'anonymous';
+    // Clean up URL - remove any existing cache-busting parameters
+    const cleanUrl = imageUrl.split('?')[0];
             
-            // Add cache-busting parameter
-            const separator = imageUrl.includes('?') ? '&' : '?';
-            const urlWithCacheBust = `${imageUrl}${separator}t=${Date.now()}`;
+    // Add a single cache-busting parameter
+    const separator = cleanUrl.includes('?') ? '&' : '?';
+    const urlWithCacheBust = `${cleanUrl}${separator}t=${Date.now()}`;
             
-            // Set timeout for image loading
-            const timeout = setTimeout(() => {
-                img.onload = null;
-                img.onerror = null;
-                reject(new Error('Image load timeout'));
-            }, 10000); // 10 second timeout
-            
-            // Set CORS policy
-            try {
-                const urlObj = new URL(imageUrl, window.location.origin);
-                img.crossOrigin = urlObj.hostname === window.location.hostname ? 'use-credentials' : 'anonymous';
-            } catch (e) {
-                console.warn('Error setting CORS policy:', e);
-            }
-            
-            img.onload = () => {
-                console.log('Server image loaded successfully');
-                element.style.backgroundImage = `url(${urlWithCacheBust})`;
-                element.textContent = ''; // Clear any initials
+    return new Promise((resolve, reject) => {
+        const img = new Image();
                 
-                // Also update the profile picture in the navigation if it exists
+        // Set CORS policy - use 'anonymous' for cross-origin requests
+        img.crossOrigin = 'anonymous';
+                
+        // Set timeout for image loading
+        const timeout = setTimeout(() => {
+            img.onload = null;
+            img.onerror = null;
+            console.error('Image load timeout for:', cleanUrl);
+            this.showInitials(element);
+            reject(new Error('Image took too long to load. Please try again.'));
+        }, 10000); // 10 second timeout
+                
+        img.onload = () => {
+            clearTimeout(timeout);
+            element.style.backgroundImage = `url(${urlWithCacheBust})`;
+            element.textContent = ''; // Clear any initials
+                    
+            // Also update the profile picture in the navigation if it exists
+            const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+            if (navAvatar) {
+                navAvatar.style.backgroundImage = `url(${urlWithCacheBust})`;
+                navAvatar.textContent = '';
+            }
+                    
+            // Update local storage
+            if (this.currentUser) {
+                this.currentUser.avatarUrl = urlWithCacheBust;
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.avatarUrl = urlWithCacheBust;
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+                    
+            resolve();
+        };
+                
+        img.onerror = () => {
+            clearTimeout(timeout);
+            console.error('Error loading image with CORS, trying without CORS...');
+                    
+            // Try again without CORS
+            const imgNoCors = new Image();
+            imgNoCors.crossOrigin = ''; // No CORS
+                    
+            imgNoCors.onload = () => {
+                element.style.backgroundImage = `url(${urlWithCacheBust})`;
+                element.textContent = '';
+                        
+                // Update navigation avatar if it exists
                 const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
                 if (navAvatar) {
                     navAvatar.style.backgroundImage = `url(${urlWithCacheBust})`;
                     navAvatar.textContent = '';
                 }
-                
-                // Update local storage with the working URL
+                        
+                // Update local storage
                 if (this.currentUser) {
-                    this.currentUser.avatarUrl = imageUrl; // Store the original URL without cache-busting
+                    this.currentUser.avatarUrl = urlWithCacheBust;
                     const user = JSON.parse(localStorage.getItem('user') || '{}');
-                    user.avatarUrl = imageUrl;
+                    user.avatarUrl = urlWithCacheBust;
                     localStorage.setItem('user', JSON.stringify(user));
                 }
+                        
+                resolve();
             };
-            
-            img.onerror = () => {
-                console.error('Failed to load server image, trying without CORS');
-                // Try without CORS
-                const imgNoCors = new Image();
-                imgNoCors.onload = () => {
-                    console.log('Image loaded without CORS');
-                    element.style.backgroundImage = `url(${urlWithCacheBust})`;
-                    element.textContent = '';
                     
-                    // Update navigation avatar if it exists
-                    const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
-                    if (navAvatar) {
-                        navAvatar.style.backgroundImage = `url(${urlWithCacheBust})`;
-                        navAvatar.textContent = '';
-                    }
-                    
-                    // Update local storage
-                    if (this.currentUser) {
-                        this.currentUser.avatarUrl = imageUrl;
-                        const user = JSON.parse(localStorage.getItem('user') || '{}');
-                        user.avatarUrl = imageUrl;
-                        localStorage.setItem('user', JSON.stringify(user));
-                    }
-                };
-                
-                imgNoCors.onerror = () => {
-                    console.error('Failed to load image with or without CORS, showing initials');
-                    this.showInitials(element);
-                };
-                
-                imgNoCors.src = urlWithCacheBust;
+            imgNoCors.onerror = () => {
+                console.error('Failed to load image with or without CORS, showing initials');
+                this.showInitials(element);
+                reject(new Error('Failed to load image. Using default avatar.'));
             };
-            
-            img.src = urlWithCacheBust;
-        });
-    } catch (error) {
-        console.error('Error setting avatar image:', error);
-        this.showInitials(element);
-    }
+                    
+            imgNoCors.src = urlWithCacheBust;
+        };
+                
+        // Start loading the image with CORS
+        img.src = urlWithCacheBust;
+    });
+} catch (error) {
+    console.error('Error setting avatar image:', error);
+    this.showInitials(element);
 }
 
 showNotification(message, type = 'info') {
@@ -643,11 +639,42 @@ showNotification(message, type = 'info') {
 
     // Show initials if no avatar is set
     showInitials(element) {
-        // ... existing showInitials implementation ...
+        if (!element) {
+            console.log('showInitials: No element provided');
+            return;
+        }
+
+        // Clear any existing background image
+        element.style.backgroundImage = '';
+        
+        // Get user's initials from the current user or element's data attribute
+        let initials = '';
+        if (this.currentUser && this.currentUser.username) {
+            initials = this.currentUser.username.charAt(0).toUpperCase();
+        } else if (element.dataset.initials) {
+            initials = element.dataset.initials;
+        } else {
+            // Default to 'U' if no initials can be determined
+            initials = 'U';
+        }
+        
+        // Set the initials text
+        element.textContent = initials;
+        
+        // Set a default background color based on the first letter
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9C9C9C'];
+        const colorIndex = initials.charCodeAt(0) % colors.length;
+        element.style.backgroundColor = colors[colorIndex];
+        
+        // Also update the profile picture in the navigation if it exists
+        const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+        if (navAvatar && navAvatar !== element) {
+            navAvatar.textContent = initials;
+            navAvatar.style.backgroundImage = 'none';
+            navAvatar.style.backgroundColor = colors[colorIndex];
+        }
     }
 }
-
-// Show initials if no avatar is set
 function showInitials(element) {
     if (!element) {
         console.log('showInitials: No element provided');
