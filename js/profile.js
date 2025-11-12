@@ -227,18 +227,15 @@ class ProfileManager {
                 throw new Error('Session expired. Please log in again.');
             }
 
-            // Show preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const userAvatar = document.getElementById('userAvatar');
-                if (userAvatar) {
-                    userAvatar.style.backgroundImage = `url(${e.target.result})`;
-                    userAvatar.style.backgroundSize = 'cover';
-                    userAvatar.style.backgroundPosition = 'center';
-                    userAvatar.textContent = '';
-                }
-            };
-            reader.readAsDataURL(file);
+            // Show preview from local file first
+            const previewUrl = URL.createObjectURL(file);
+            const userAvatar = document.getElementById('userAvatar');
+            if (userAvatar) {
+                userAvatar.style.backgroundImage = `url(${previewUrl})`;
+                userAvatar.style.backgroundSize = 'cover';
+                userAvatar.style.backgroundPosition = 'center';
+                userAvatar.textContent = '';
+            }
 
             // Upload to server
             const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
@@ -263,32 +260,37 @@ class ProfileManager {
             
             this.showNotification('✅ Profile picture updated successfully!', 'success');
             
-            // Update the avatar UI with the new image
-            const userAvatar = document.getElementById('userAvatar');
-            if (userAvatar) {
-                // Ensure we have an absolute URL
+            // Update the avatar with the server URL
+            if (userAvatar && result.avatarUrl) {
                 let avatarUrl = result.avatarUrl;
-                if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-                    // If it's a relative URL, prepend the API base URL
+                
+                // If it's a relative URL, make it absolute
+                if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
                     const baseUrl = window.API_BASE_URL || '';
-                    // Remove any trailing slashes from base URL and leading slashes from avatar path
-                    avatarUrl = `${baseUrl.replace(/\/+$/, '')}/${avatarUrl.replace(/^\/+/, '')}`;
-                }
-                userAvatar.style.backgroundImage = `url(${avatarUrl})`;
-                userAvatar.textContent = '';
-                
-                // Force refresh the image in case of cache issues
-                if (avatarUrl.includes('?')) {
-                    avatarUrl += '&t=' + new Date().getTime();
-                } else {
-                    avatarUrl += '?t=' + new Date().getTime();
+                    avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
                 }
                 
-                // Create a new image element to preload the avatar
+                // Add cache-busting parameter
+                const separator = avatarUrl.includes('?') ? '&' : '?';
+                const timestamp = new Date().getTime();
+                avatarUrl = `${avatarUrl}${separator}t=${timestamp}`;
+                
+                // Create a new image to verify the URL works
                 const img = new Image();
-                img.onload = function() {
+                img.crossOrigin = 'anonymous';
+                
+                img.onload = () => {
+                    // Only update if the image loads successfully
                     userAvatar.style.backgroundImage = `url(${avatarUrl})`;
+                    userAvatar.textContent = '';
+                    URL.revokeObjectURL(previewUrl); // Clean up the preview URL
                 };
+                
+                img.onerror = () => {
+                    console.error('Failed to load avatar from server, keeping preview');
+                    // Keep the preview that was already set
+                };
+                
                 img.src = avatarUrl;
             }
         } catch (error) {
