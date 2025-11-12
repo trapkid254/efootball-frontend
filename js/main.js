@@ -305,6 +305,20 @@ class TonaKikwetuApp {
         const form = document.getElementById('registerForm');
         if (!form) return;
 
+        // Check if form is valid
+        if (!form.checkValidity()) {
+            // Show custom validation messages
+            const passwordInput = document.getElementById('regPassword');
+            if (passwordInput && !passwordInput.validity.valid) {
+                this.showNotification('Please ensure your password meets all requirements', 'error');
+            } else {
+                this.showNotification('Please fill in all required fields correctly', 'error');
+            }
+            // Trigger browser's default validation UI
+            form.reportValidity();
+            return;
+        }
+
         const formData = new FormData(form);
         const registerData = {
             whatsapp: formData.get('whatsapp')?.trim() || '',
@@ -313,30 +327,20 @@ class TonaKikwetuApp {
             confirmPassword: formData.get('confirmPassword') || ''
         };
 
-        // Validation
-        if (!registerData.whatsapp || !registerData.efootballId || !registerData.password) {
-            this.showNotification('Please fill in all fields', 'error');
-            return;
-        }
-
-        if (!this.validatePhone(registerData.whatsapp)) {
-            this.showNotification('Please enter a valid WhatsApp number (e.g., 0712345678, +254712345678, or 254712345678)', 'error');
-            return;
-        }
-
+        // Additional validation
         if (registerData.password !== registerData.confirmPassword) {
             this.showNotification('Passwords do not match', 'error');
-            return;
-        }
-
-        if (registerData.password.length < 6) {
-            this.showNotification('Password must be at least 6 characters', 'error');
+            const confirmPassInput = document.getElementById('regConfirmPassword');
+            if (confirmPassInput) {
+                confirmPassInput.focus();
+                confirmPassInput.setCustomValidity('Passwords do not match');
+            }
             return;
         }
 
         try {
             this.showLoading(true);
-            
+
             // Call the registration API
             const response = await fetch(`${window.API_BASE_URL || ''}/api/auth/register`, {
                 method: 'POST',
@@ -353,7 +357,15 @@ class TonaKikwetuApp {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Registration failed');
+                // Handle specific error types
+                if (data.errorType === 'WEAK_PASSWORD') {
+                    this.showNotification('Password does not meet requirements. ' + data.message, 'error');
+                } else if (data.errorType === 'USER_EXISTS') {
+                    this.showNotification(data.message || 'An account with these details already exists', 'error');
+                } else {
+                    throw new Error(data.message || 'Registration failed');
+                }
+                return;
             }
 
             // Registration successful
