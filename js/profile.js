@@ -237,7 +237,7 @@ class ProfileManager {
                 userAvatar.textContent = '';
             }
 
-            // Upload to server
+            // Upload to server and get the image as a blob
             const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
                 method: 'POST',
                 headers: {
@@ -251,47 +251,50 @@ class ProfileManager {
                 throw new Error(errorData.message || 'Failed to upload avatar. The server returned an error.');
             }
 
-            const result = await response.json();
-            this.currentUser = { ...this.currentUser, ...result };
+            // Get the response as a blob
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
             
-            // Update user in local storage
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            localStorage.setItem('user', JSON.stringify({ ...user, ...result }));
+            // Update the UI immediately with the blob URL
+            if (userAvatar) {
+                userAvatar.style.backgroundImage = `url(${objectUrl})`;
+                userAvatar.style.backgroundSize = 'cover';
+                userAvatar.style.backgroundPosition = 'center';
+                userAvatar.textContent = '';
+                
+                // Store the object URL in the user data
+                this.currentUser.avatarUrl = objectUrl;
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.avatarUrl = objectUrl;
+                localStorage.setItem('user', JSON.stringify(user));
+            }
             
             this.showNotification('✅ Profile picture updated successfully!', 'success');
             
-            // Update the avatar with the server URL
-            if (userAvatar && result.avatarUrl) {
-                let avatarUrl = result.avatarUrl;
-                
-                // If it's a relative URL, make it absolute
-                if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-                    const baseUrl = window.API_BASE_URL || '';
-                    avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+            // In the background, try to get the permanent URL from the server
+            try {
+                const result = await response.clone().json();
+                if (result.avatarUrl) {
+                    // Store the server URL for future use
+                    this.currentUser.avatarUrl = result.avatarUrl;
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    user.avatarUrl = result.avatarUrl;
+                    localStorage.setItem('user', JSON.stringify(user));
+                    
+                    // Try to preload the server URL
+                    const img = new Image();
+                    img.onload = () => {
+                        // If it loads successfully, update to use the server URL
+                        if (userAvatar) {
+                            userAvatar.style.backgroundImage = `url(${result.avatarUrl})`;
+                            // Clean up the blob URL
+                            URL.revokeObjectURL(objectUrl);
+                        }
+                    };
+                    img.src = result.avatarUrl;
                 }
-                
-                // Add cache-busting parameter
-                const separator = avatarUrl.includes('?') ? '&' : '?';
-                const timestamp = new Date().getTime();
-                avatarUrl = `${avatarUrl}${separator}t=${timestamp}`;
-                
-                // Create a new image to verify the URL works
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                
-                img.onload = () => {
-                    // Only update if the image loads successfully
-                    userAvatar.style.backgroundImage = `url(${avatarUrl})`;
-                    userAvatar.textContent = '';
-                    URL.revokeObjectURL(previewUrl); // Clean up the preview URL
-                };
-                
-                img.onerror = () => {
-                    console.error('Failed to load avatar from server, keeping preview');
-                    // Keep the preview that was already set
-                };
-                
-                img.src = avatarUrl;
+            } catch (e) {
+                console.log('Could not parse JSON response, using blob URL');
             }
         } catch (error) {
             console.error('Error uploading avatar:', error);
