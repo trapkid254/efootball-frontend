@@ -313,46 +313,93 @@ class ProfileManager {
         }
     }
 
-    updateAvatarUI() {
+    async updateAvatarUI() {
         const userAvatar = document.getElementById('userAvatar');
         if (!userAvatar) return;
         
         if (this.currentUser?.avatarUrl) {
-            let avatarUrl = this.currentUser.avatarUrl;
-            
-            // If it's a relative URL, make it absolute
-            if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-                const baseUrl = window.API_BASE_URL || '';
-                avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+            try {
+                // First try to load the avatar directly
+                let avatarUrl = this.currentUser.avatarUrl;
+                
+                // If it's a relative URL, make it absolute
+                if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                    const baseUrl = window.API_BASE_URL || '';
+                    avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+                }
+                
+                // Try to load the image directly first
+                const directLoad = await this.loadAvatarImage(avatarUrl);
+                if (directLoad) {
+                    this.setAvatarImage(userAvatar, directLoad);
+                    return;
+                }
+                
+                // If direct load fails, try using a proxy endpoint
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const proxyUrl = `${window.API_BASE_URL || ''}/api/users/avatar?url=${encodeURIComponent(avatarUrl)}`;
+                    const proxyLoad = await this.loadAvatarImage(proxyUrl, token);
+                    if (proxyLoad) {
+                        this.setAvatarImage(userAvatar, proxyLoad);
+                        return;
+                    }
+                }
+                
+                // If all else fails, show initials
+                this.showInitials(userAvatar);
+                
+            } catch (error) {
+                console.error('Error loading avatar:', error);
+                this.showInitials(userAvatar);
             }
-            
-            // Add cache-busting parameter
-            const separator = avatarUrl.includes('?') ? '&' : '?';
-            const timestamp = new Date().getTime();
-            avatarUrl = `${avatarUrl}${separator}t=${timestamp}`;
-            
-            // Create a new image to handle CORS properly
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
-            img.onload = () => {
-                userAvatar.style.backgroundImage = `url(${avatarUrl})`;
-                userAvatar.style.backgroundSize = 'cover';
-                userAvatar.style.backgroundPosition = 'center';
-                userAvatar.textContent = '';
-            };
-            
-            img.onerror = () => {
-                console.error('Failed to load avatar, falling back to initials');
-                userAvatar.style.backgroundImage = '';
-                userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
-            };
-            
-            img.src = avatarUrl;
         } else {
-            userAvatar.style.backgroundImage = '';
-            userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+            this.showInitials(userAvatar);
         }
+    }
+    
+    async loadAvatarImage(url, token = null) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            
+            // If we have a token, add it to the headers
+            if (token) {
+                img.crossOrigin = 'use-credentials';
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'blob';
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                xhr.onload = function() {
+                    if (this.status === 200) {
+                        const blob = this.response;
+                        const objectUrl = URL.createObjectURL(blob);
+                        resolve(objectUrl);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                xhr.onerror = () => resolve(null);
+                xhr.send();
+            } else {
+                // Try with anonymous CORS first
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(url);
+                img.onerror = () => resolve(null);
+                img.src = url;
+            }
+        });
+    }
+    
+    setAvatarImage(element, imageUrl) {
+        element.style.backgroundImage = `url(${imageUrl})`;
+        element.style.backgroundSize = 'cover';
+        element.style.backgroundPosition = 'center';
+        element.textContent = '';
+    }
+    
+    showInitials(element) {
+        element.style.backgroundImage = '';
+        element.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
     }
 
     showNotification(message, type = 'info') {
