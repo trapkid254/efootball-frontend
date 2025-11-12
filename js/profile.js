@@ -11,8 +11,19 @@ class ProfileManager {
     }
 
     async loadUserProfile(maxRetries = 2, retryDelay = 1000) {
-        let retryCount = 0;
+        console.log('loadUserProfile called');
         
+        // First try to load from localStorage
+        const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (cachedUser) {
+            console.log('Found cached user in localStorage:', cachedUser);
+            this.currentUser = { ...cachedUser };
+            await this.updateAvatarUI();
+        }
+        
+        let retryCount = 0;
+        let lastError = null;
+
         const loadProfile = async () => {
             try {
                 const token = localStorage.getItem('token');
@@ -69,6 +80,7 @@ class ProfileManager {
                 // Ensure avatar URL is properly formatted
                 if (userData.avatarUrl && !userData.avatarUrl.startsWith('http')) {
                     userData.avatarUrl = `${window.API_BASE_URL || ''}${userData.avatarUrl.startsWith('/') ? '' : '/'}${userData.avatarUrl}`;
+                    console.log('Formatted avatar URL:', userData.avatarUrl);
                 }
                 
                 this.currentUser = userData;
@@ -263,6 +275,7 @@ class ProfileManager {
     }
 
     async handleAvatarUpload(event) {
+        console.log('handleAvatarUpload called');
         const fileInput = event.target;
         const file = fileInput.files[0];
         const userAvatar = document.getElementById('userAvatar');
@@ -352,6 +365,7 @@ class ProfileManager {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 user.avatar = this.currentUser.avatar;
                 user.avatarUrl = this.currentUser.avatarUrl;
+                console.log('Saving to localStorage:', { user });
                 localStorage.setItem('user', JSON.stringify(user));
                 
                 this.showNotification('✅ Profile picture updated successfully!', 'success');
@@ -382,15 +396,48 @@ class ProfileManager {
         }
     }
 
+    // Check if an image exists at the given URL
+    async checkImageExists(url) {
+        try {
+            const response = await fetch(url, { method: 'HEAD' });
+            return response.ok;
+        } catch (error) {
+            console.error('Error checking image:', url, error);
+            return false;
+        }
+    }
+
     async updateAvatarUI() {
+        console.log('updateAvatarUI called');
         const userAvatar = document.getElementById('userAvatar');
-        if (!userAvatar) return;
+        if (!userAvatar) {
+            console.log('userAvatar element not found');
+            return;
+        }
+        
+        // First, try to show the avatar from the current user object
+        if (this.currentUser?.avatarUrl) {
+            const avatarUrl = this.currentUser.avatarUrl;
+            console.log('Trying to load avatar from currentUser:', avatarUrl);
+            
+            // Check if the image exists on the server
+            const exists = await this.checkImageExists(avatarUrl);
+            if (exists) {
+                console.log('Avatar found at URL:', avatarUrl);
+                this.setAvatarImage(userAvatar, avatarUrl);
+                return;
+            } else {
+                console.log('Avatar not found at URL:', avatarUrl);
+            }
+        }
         
         // Check if we have a cached avatar URL in local storage
         const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log('Cached user from localStorage:', cachedUser);
         
         // If we have a cached avatar URL, use it
         if (cachedUser?.avatarUrl) {
+            console.log('Trying to load avatar from localStorage cache:', cachedUser.avatarUrl);
             const separator = cachedUser.avatarUrl.includes('?') ? '&' : '?';
             const avatarUrl = `${cachedUser.avatarUrl}${separator}t=${Date.now()}`;
             
@@ -519,10 +566,21 @@ class ProfileManager {
     }
     
     // Helper method to load an image with a timeout
-    async loadImageWithTimeout(url, timeout = 5000) {
+    async loadImageWithTimeout(url, timeout = 3000) {
         return new Promise((resolve) => {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
+            
+            // If the URL is from the same origin, use CORS
+            try {
+                const urlObj = new URL(url, window.location.origin);
+                if (urlObj.hostname === window.location.hostname) {
+                    img.crossOrigin = 'use-credentials';
+                } else {
+                    img.crossOrigin = 'anonymous';
+                }
+            } catch (e) {
+                console.warn('Error setting CORS policy:', e);
+            }
             
             const timer = setTimeout(() => {
                 img.onload = null;
@@ -534,7 +592,13 @@ class ProfileManager {
             img.onload = () => {
                 clearTimeout(timer);
                 console.log('Image loaded successfully:', url);
-                resolve(true);
+                // Verify the image has actual content
+                if (img.width > 0 && img.height > 0) {
+                    resolve(true);
+                } else {
+                    console.error('Image has zero dimensions:', url);
+                    resolve(false);
+                }
             };
             
             img.onerror = (e) => {
@@ -550,80 +614,142 @@ class ProfileManager {
     }
     
     setAvatarImage(element, imageUrl) {
-        if (!element || !imageUrl) return;
+        if (!element || !imageUrl) {
+            console.log('setAvatarImage: Missing element or imageUrl');
+            return;
+        }
+        
+        console.log('Setting avatar image:', imageUrl);
         
         // If it's a blob URL or data URL, use it directly
         if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
             element.style.backgroundImage = `url(${imageUrl})`;
+            element.textContent = ''; // Clear any initials
+            
+            // Also update the profile picture in the navigation if it exists
+            const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+            if (navAvatar) {
+                navAvatar.style.backgroundImage = `url(${imageUrl})`;
+                navAvatar.textContent = '';
+            }
+            
+            // Update local storage with the blob URL
+            if (this.currentUser) {
+                this.currentUser.avatarUrl = imageUrl;
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.avatarUrl = imageUrl;
+                localStorage.setItem('user', JSON.stringify(user));
+            }
         } else {
             // For server URLs, add cache-busting parameter
             const separator = imageUrl.includes('?') ? '&' : '?';
             const timestamp = new Date().getTime();
             const urlWithCacheBust = `${imageUrl}${separator}t=${timestamp}`;
             
-            // Try to load with CORS first
+            console.log('Using server URL with cache-busting:', urlWithCacheBust);
+            
+            // Create a new image to verify it loads
             const img = new Image();
-            const self = this;
             
-            img.crossOrigin = 'anonymous';
+            // Set CORS policy
+            try {
+                const urlObj = new URL(imageUrl, window.location.origin);
+                img.crossOrigin = urlObj.hostname === window.location.hostname ? 'use-credentials' : 'anonymous';
+            } catch (e) {
+                console.warn('Error setting CORS policy:', e);
+            }
             
-            img.onload = function() {
+            img.onload = () => {
+                console.log('Server image loaded successfully');
                 element.style.backgroundImage = `url(${urlWithCacheBust})`;
+                element.textContent = ''; // Clear any initials
+                
+                // Also update the profile picture in the navigation if it exists
+                const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+                if (navAvatar) {
+                    navAvatar.style.backgroundImage = `url(${urlWithCacheBust})`;
+                    navAvatar.textContent = '';
+                }
+                
+                // Update local storage with the working URL
+                if (this.currentUser) {
+                    this.currentUser.avatarUrl = imageUrl; // Store the original URL without cache-busting
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    user.avatarUrl = imageUrl;
+                    localStorage.setItem('user', JSON.stringify(user));
+                }
             };
             
-            img.onerror = function() {
-                // If CORS fails, try without CORS
-                console.log('CORS failed, trying without CORS');
+            img.onerror = () => {
+                console.error('Failed to load server image, trying without CORS');
+                // Try without CORS
                 const imgNoCors = new Image();
-                imgNoCors.onload = function() {
+                imgNoCors.onload = () => {
+                    console.log('Image loaded without CORS');
                     element.style.backgroundImage = `url(${urlWithCacheBust})`;
+                    element.textContent = '';
+                    
+                    // Update navigation avatar if it exists
+                    const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+                    if (navAvatar) {
+                        navAvatar.style.backgroundImage = `url(${urlWithCacheBust})`;
+                        navAvatar.textContent = '';
+                    }
+                    
+                    // Update local storage
+                    if (this.currentUser) {
+                        this.currentUser.avatarUrl = imageUrl;
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+                        user.avatarUrl = imageUrl;
+                        localStorage.setItem('user', JSON.stringify(user));
+                    }
                 };
-                imgNoCors.onerror = function() {
-                    console.error('Failed to load avatar image');
+                
+                imgNoCors.onerror = () => {
+                    console.error('Failed to load image with or without CORS, showing initials');
                     this.showInitials(element);
-                }.bind(this);
+                };
+                
                 imgNoCors.src = urlWithCacheBust;
-            }.bind(this);
+            };
+            
+            img.src = urlWithCacheBust;
         }
         
+        // Ensure proper styling
         element.style.backgroundSize = 'cover';
         element.style.backgroundPosition = 'center';
-        element.textContent = '';
     }
     
     showInitials(element) {
-        if (!element) return;
-        element.style.backgroundImage = '';
-        element.style.backgroundColor = '#e0e0e0';
-        element.style.display = 'flex';
-        element.style.alignItems = 'center';
-        element.style.justifyContent = 'center';
-        element.style.color = '#555';
-        element.style.fontWeight = 'bold';
-        element.style.fontSize = '24px';
-        
-        const username = this.currentUser && (this.currentUser.efootballId || this.currentUser.username || this.currentUser.email || 'U');
-        element.textContent = username.charAt(0).toUpperCase();
-    }
-
-    showNotification(message, type = 'info') {
-        // Remove existing notifications
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
+        if (!element) {
+            console.log('showInitials: No element provided');
+            return;
         }
-
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-
-        document.body.appendChild(notification);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            notification.classList.add('fade-out');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
+        
+        element.style.backgroundImage = '';
+        element.style.backgroundSize = 'cover';
+        element.style.backgroundPosition = 'center';
+        
+        if (!this.currentUser) {
+            console.log('showInitials: No current user data');
+            element.textContent = 'U';
+            return;
+        }
+        
+        // Get the first letter of the username or email
+        const name = this.currentUser.username || this.currentUser.email || 'U';
+        const initial = name.charAt(0).toUpperCase();
+        
+        console.log('Showing initials:', initial);
+        element.textContent = initial;
+        
+        // Also update the profile picture in the navigation if it exists
+        const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+        if (navAvatar) {
+            navAvatar.textContent = initial;
+            navAvatar.style.backgroundImage = 'none';
+        }
     }
 }
 
