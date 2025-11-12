@@ -10,65 +10,123 @@ class ProfileManager {
         this.updateUI();
     }
 
-    async loadUserProfile() {
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found. Please log in again.');
-            }
+    async loadUserProfile(maxRetries = 2, retryDelay = 1000) {
+        let retryCount = 0;
+        
+        const loadProfile = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found. Please log in again.');
+                }
 
-            const apiUrl = `${window.API_BASE_URL || ''}/api/users/me`;
-            console.log('Fetching user profile from:', apiUrl);
-            
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include' // Include cookies if using session-based auth
-            });
+                const apiUrl = `${window.API_BASE_URL || ''}/api/users/me`;
+                console.log('Fetching user profile from:', apiUrl);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
 
-            console.log('Response status:', response.status);
-            
-            if (!response.ok) {
-                let errorData;
-                try {
-                    errorData = await response.json();
-                    console.error('Error response:', errorData);
-                } catch (e) {
-                    console.error('Could not parse error response');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    let errorData;
+                    try {
+                        errorData = await response.json().catch(() => ({}));
+                        console.error('Error response:', errorData);
+                    } catch (e) {
+                        console.error('Could not parse error response');
+                    }
+                    
+                    if (response.status === 401) {
+                        // Token might be expired or invalid
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = 'login.html';
+                        return null;
+                    }
+                    
+                    const error = new Error(errorData?.message || `Failed to fetch user profile: ${response.status} ${response.statusText}`);
+                    error.isRetryable = response.status >= 500 || response.status === 0; // Retry on server errors or network issues
+                    throw error;
+                }
+
+                const userData = await response.json();
+                console.log('User data received:', userData);
+                
+                this.currentUser = userData;
+                localStorage.setItem('user', JSON.stringify(this.currentUser));
+                this.updateUI();
+                return userData;
+                
+            } catch (error) {
+                console.error('Error in loadProfile attempt:', {
+                    message: error.message,
+                    name: error.name,
+                    stack: error.stack,
+                    isRetryable: error.isRetryable !== false
+                });
+                
+                if (error.isRetryable !== false) {
+                    throw error;
                 }
                 
-                if (response.status === 401) {
-                    // Token might be expired or invalid
-                    localStorage.removeItem('token');
-                    window.location.href = 'login.html';
-                    return;
+                // For non-retryable errors, show error immediately
+                this.showNotification(error.message || 'Failed to load profile. Please try again.', 'error');
+                return null;
+            }
+        };
+
+        while (retryCount <= maxRetries) {
+            try {
+                return await loadProfile();
+            } catch (error) {
+                retryCount++;
+                
+                if (retryCount > maxRetries) {
+                    console.error(`Failed after ${maxRetries} retries:`, error);
+                    
+                    if (error.name === 'AbortError') {
+                        this.showNotification('Request timed out. The server is taking too long to respond.', 'error');
+                    } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        console.error('Network error. Check if the server is running and accessible.');
+                        console.error('Current API base URL:', window.API_BASE_URL || 'Not set (using relative URL)');
+                        this.showNotification('Unable to connect to the server. Please check your internet connection and try again.', 'error');
+                    } else {
+                        this.showNotification(error.message || 'Failed to load profile. Please try again later.', 'error');
+                    }
+                    
+                    // Try to show cached user data if available
+                    const cachedUser = localStorage.getItem('user');
+                    if (cachedUser) {
+                        try {
+                            this.currentUser = JSON.parse(cachedUser);
+                            this.updateUI();
+                            this.showNotification('Showing cached profile data. Some features may be limited.', 'warning');
+                        } catch (e) {
+                            console.error('Error parsing cached user data:', e);
+                        }
+                    }
+                    
+                    return null;
                 }
                 
-                throw new Error(errorData?.message || `Failed to fetch user profile: ${response.status} ${response.statusText}`);
-            }
-
-            const userData = await response.json();
-            console.log('User data received:', userData);
-            
-            this.currentUser = userData;
-            localStorage.setItem('user', JSON.stringify(this.currentUser));
-            this.updateUI();
-        } catch (error) {
-            console.error('Error loading user profile:', {
-                message: error.message,
-                name: error.name,
-                stack: error.stack
-            });
-            this.showNotification(error.message || 'Failed to load profile. Please try again.', 'error');
-            
-            // If it's a network error, try to show more details
-            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                console.error('Network error. Check if the server is running and accessible.');
-                console.error('Current API base URL:', window.API_BASE_URL || 'Not set (using relative URL)');
+                // Wait before retrying
+                console.log(`Retrying in ${retryDelay}ms... (attempt ${retryCount}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                retryDelay *= 2; // Exponential backoff
             }
         }
     }
@@ -251,50 +309,36 @@ class ProfileManager {
                 throw new Error(errorData.message || 'Failed to upload avatar. The server returned an error.');
             }
 
-            // Get the server response with the avatar URL
-            const result = await response.json();
+            // Get the response as a blob
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
             
-            // Update the current user with the new avatar URL
-            if (result.avatarUrl) {
-                // Make sure the URL is absolute
-                let avatarUrl = result.avatarUrl;
-                if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-                    const baseUrl = window.API_BASE_URL || '';
-                    avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+            // Update the UI with the blob URL
+            if (userAvatar) {
+                userAvatar.style.backgroundImage = `url(${objectUrl})`;
+                userAvatar.style.backgroundSize = 'cover';
+                userAvatar.style.backgroundPosition = 'center';
+                userAvatar.textContent = '';
+                
+                // Store the blob URL in the user data
+                this.currentUser.avatarUrl = objectUrl;
+                this.currentUser.avatarBlobUrl = objectUrl; // Store the blob URL separately
+                
+                // Also store the server URL for future use
+                try {
+                    const result = await response.clone().json();
+                    if (result?.avatarUrl) {
+                        this.currentUser.avatarUrl = result.avatarUrl;
+                    }
+                } catch (e) {
+                    console.log('Could not parse server response for avatar URL');
                 }
                 
-                // Add cache-busting parameter
-                const separator = avatarUrl.includes('?') ? '&' : '?';
-                const timestamp = new Date().getTime();
-                const finalUrl = `${avatarUrl}${separator}t=${timestamp}`;
-                
-                // Update the UI with the new avatar
-                if (userAvatar) {
-                    // First try to load the image to make sure it's accessible
-                    const img = new Image();
-                    img.onload = () => {
-                        // If image loads successfully, update the UI
-                        userAvatar.style.backgroundImage = `url(${finalUrl})`;
-                        userAvatar.style.backgroundSize = 'cover';
-                        userAvatar.style.backgroundPosition = 'center';
-                        userAvatar.textContent = '';
-                        
-                        // Update the user data with the new URL
-                        this.currentUser.avatarUrl = finalUrl;
-                        const user = JSON.parse(localStorage.getItem('user') || '{}');
-                        user.avatarUrl = finalUrl;
-                        localStorage.setItem('user', JSON.stringify(user));
-                    };
-                    img.onerror = () => {
-                        // If image fails to load, keep the preview but still update the URL
-                        console.log('Image loaded but might not display correctly');
-                        this.currentUser.avatarUrl = finalUrl;
-                        const user = JSON.parse(localStorage.getItem('user') || '{}');
-                        user.avatarUrl = finalUrl;
-                        localStorage.setItem('user', JSON.stringify(user));
-                    };
-                    img.src = finalUrl;
-                }
+                // Update local storage
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.avatarUrl = this.currentUser.avatarUrl;
+                user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
+                localStorage.setItem('user', JSON.stringify(user));
             }
             
             this.showNotification('✅ Profile picture updated successfully!', 'success');
@@ -353,6 +397,12 @@ class ProfileManager {
         const userAvatar = document.getElementById('userAvatar');
         if (!userAvatar) return;
         
+        // First, try to use the blob URL if available (from recent upload)
+        if (this.currentUser?.avatarBlobUrl) {
+            this.setAvatarImage(userAvatar, this.currentUser.avatarBlobUrl);
+            return;
+        }
+        
         if (this.currentUser?.avatarUrl) {
             try {
                 // First try to load the avatar directly
@@ -364,25 +414,33 @@ class ProfileManager {
                     avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
                 }
                 
+                // Add cache-busting parameter
+                const separator = avatarUrl.includes('?') ? '&' : '?';
+                const timestamp = new Date().getTime();
+                avatarUrl = `${avatarUrl}${separator}t=${timestamp}`;
+                
                 // Try to load the image directly first
-                const directLoad = await this.loadAvatarImage(avatarUrl);
-                if (directLoad) {
-                    this.setAvatarImage(userAvatar, directLoad);
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                const loadPromise = new Promise((resolve) => {
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = avatarUrl;
+                });
+                
+                // Wait for the image to load or fail (with a timeout)
+                const loaded = await Promise.race([
+                    loadPromise,
+                    new Promise(resolve => setTimeout(() => resolve(false), 3000))
+                ]);
+                
+                if (loaded) {
+                    this.setAvatarImage(userAvatar, avatarUrl);
                     return;
                 }
                 
-                // If direct load fails, try using a proxy endpoint
-                const token = localStorage.getItem('token');
-                if (token) {
-                    const proxyUrl = `${window.API_BASE_URL || ''}/api/users/avatar?url=${encodeURIComponent(avatarUrl)}`;
-                    const proxyLoad = await this.loadAvatarImage(proxyUrl, token);
-                    if (proxyLoad) {
-                        this.setAvatarImage(userAvatar, proxyLoad);
-                        return;
-                    }
-                }
-                
-                // If all else fails, show initials
+                // If direct load fails, show initials
                 this.showInitials(userAvatar);
                 
             } catch (error) {
@@ -419,8 +477,8 @@ class ProfileManager {
             } else {
                 // Try with anonymous CORS first
                 img.crossOrigin = 'anonymous';
-                img.onload = () => resolve(url);
-                img.onerror = () => resolve(null);
+                img.onload = function() { resolve(url); };
+                img.onerror = function() { resolve(null); };
                 img.src = url;
             }
         });
@@ -435,10 +493,12 @@ class ProfileManager {
     
     showInitials(element) {
         element.style.backgroundImage = '';
-        element.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
+        const username = this.currentUser && this.currentUser.efootballId ? this.currentUser.efootballId : 'U';
+        element.textContent = username.charAt(0).toUpperCase();
     }
 
-    showNotification(message, type = 'info') {
+    showNotification(message, type) {
+        type = type || 'info';
         // Remove existing notifications
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
@@ -460,7 +520,7 @@ class ProfileManager {
 }
 
 // Initialize the profile manager when the DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     // Check if user is authenticated
     const token = localStorage.getItem('token');
     if (!token) {
