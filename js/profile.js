@@ -287,39 +287,27 @@ class ProfileManager {
         // Store original button HTML for restoring later
         if (uploadBtn) {
             originalBtnHTML = uploadBtn.innerHTML;
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
         }
 
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            this.showNotification('❌ Image size should be less than 2MB', 'error');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
         try {
-            // Validate file type
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            if (!validTypes.includes(file.type)) {
-                throw new Error('Please upload a valid image file (JPEG, PNG, or GIF)');
+            // Show loading state
+            if (uploadBtn) {
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             }
 
-            // Validate file size (max 10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            if (file.size > maxSize) {
-                throw new Error('Image size should be less than 10MB');
-            }
-
-            const formData = new FormData();
-            formData.append('avatar', file);
-
-            // Show preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if (userAvatar) {
-                    userAvatar.style.backgroundImage = `url(${e.target.result})`;
-                }
-            };
-            reader.readAsDataURL(file);
-
-            // Upload to server
             const token = localStorage.getItem('token');
             if (!token) {
-                throw new Error('You must be logged in to upload an avatar');
+                throw new Error('No authentication token found');
             }
 
             const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
@@ -332,62 +320,49 @@ class ProfileManager {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to upload avatar. Please try again.');
+                throw new Error(errorData.message || 'Failed to upload avatar');
             }
 
-
-            // Get the response as JSON
             const result = await response.json();
             console.log('Avatar upload response:', result);
             
             if (result.avatarUrl) {
-                // Ensure the avatar URL is complete
-                let serverAvatarUrl = result.avatarUrl;
-                
-                // If it's a relative URL, prepend the API base URL
-                if (!serverAvatarUrl.startsWith('http') && !serverAvatarUrl.startsWith('data:')) {
-                    serverAvatarUrl = `${window.API_BASE_URL || ''}${serverAvatarUrl.startsWith('/') ? '' : '/'}${serverAvatarUrl}`;
+                // Make sure the avatar URL is absolute
+                let avatarUrl = result.avatarUrl;
+                if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                    // Prepend base URL if it's a relative path
+                    avatarUrl = `${window.API_BASE_URL || ''}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
                 }
                 
-                // Update the current user data
-                this.currentUser.avatar = result.avatar; // Save the filename
-                this.currentUser.avatarUrl = serverAvatarUrl; // Save the full URL
+                // Update current user data
+                this.currentUser = this.currentUser || {};
+                this.currentUser.avatar = result.avatar;
+                this.currentUser.avatarUrl = avatarUrl;
                 
-                // Update the UI with the new avatar
+                // Update UI
                 if (userAvatar) {
                     // Add cache-busting parameter
-                    const separator = serverAvatarUrl.includes('?') ? '&' : '?';
-                    const urlWithCacheBust = `${serverAvatarUrl}${separator}t=${Date.now()}`;
+                    const separator = avatarUrl.includes('?') ? '&' : '?';
+                    const urlWithCacheBust = `${avatarUrl}${separator}t=${Date.now()}`;
                     this.setAvatarImage(userAvatar, urlWithCacheBust);
                 }
                 
-                // Update local storage with both the filename and full URL
+                // Update local storage
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 user.avatar = this.currentUser.avatar;
                 user.avatarUrl = this.currentUser.avatarUrl;
-                console.log('Saving to localStorage:', { user });
                 localStorage.setItem('user', JSON.stringify(user));
                 
+                // Show success message
                 this.showNotification('✅ Profile picture updated successfully!', 'success');
             } else {
                 throw new Error('No avatar URL returned from server');
             }
         } catch (error) {
-            if (error instanceof SyntaxError) {
-                console.log('Could not parse JSON response, using blob URL');
-            } else {
-                console.error('Error uploading avatar:', error);
-                this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
-                
-                // Revert to default avatar on error
-                const userAvatar = document.getElementById('userAvatar');
-                if (userAvatar) {
-                    userAvatar.style.backgroundImage = '';
-                    userAvatar.textContent = (this.currentUser?.efootballId || 'U').charAt(0).toUpperCase();
-                }
-            }
+            console.error('Error uploading avatar:', error);
+            this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
         } finally {
-            // Reset the file input and button state
+            // Reset file input and button state
             if (fileInput) fileInput.value = '';
             if (uploadBtn) {
                 uploadBtn.disabled = false;
@@ -421,235 +396,143 @@ class ProfileManager {
             console.log('Trying to load avatar from currentUser:', avatarUrl);
             
             // Check if the image exists on the server
-            const exists = await this.checkImageExists(avatarUrl);
-            if (exists) {
-                console.log('Avatar found at URL:', avatarUrl);
-                this.setAvatarImage(userAvatar, avatarUrl);
-                return;
-            } else {
-                console.log('Avatar not found at URL:', avatarUrl);
-            }
         }
+
+        const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to upload avatar');
+        }
+
+        const result = await response.json();
+        console.log('Avatar upload response:', result);
         
-        // Check if we have a cached avatar URL in local storage
-        const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        console.log('Cached user from localStorage:', cachedUser);
-        
-        // If we have a cached avatar URL, use it
-        if (cachedUser?.avatarUrl) {
-            console.log('Trying to load avatar from localStorage cache:', cachedUser.avatarUrl);
-            const separator = cachedUser.avatarUrl.includes('?') ? '&' : '?';
-            const avatarUrl = `${cachedUser.avatarUrl}${separator}t=${Date.now()}`;
+        if (result.avatarUrl) {
+            // Make sure the avatar URL is absolute
+            let avatarUrl = result.avatarUrl;
+            if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                // Prepend base URL if it's a relative path
+                avatarUrl = `${window.API_BASE_URL || ''}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+            }
             
-            // Try to load the avatar with a timeout
-            const loaded = await this.loadImageWithTimeout(avatarUrl);
-            if (loaded) {
-                this.setAvatarImage(userAvatar, avatarUrl);
-                return;
-            }
-        }
-        
-        // If no cached URL or it failed to load, try the current user's avatar
-        if (this.currentUser?.avatarUrl) {
-            const separator = this.currentUser.avatarUrl.includes('?') ? '&' : '?';
-            const avatarUrl = `${this.currentUser.avatarUrl}${separator}t=${Date.now()}`;
+            // Update current user data
+            this.currentUser = this.currentUser || {};
+            this.currentUser.avatar = result.avatar;
+            this.currentUser.avatarUrl = avatarUrl;
             
-            try {
-                const loaded = await this.loadImageWithTimeout(avatarUrl);
-                if (loaded) {
-                    this.setAvatarImage(userAvatar, avatarUrl);
-                    
-                    // Update local storage with the working URL
-                    const user = JSON.parse(localStorage.getItem('user') || '{}');
-                    user.avatarUrl = this.currentUser.avatarUrl;
-                    localStorage.setItem('user', JSON.stringify(user));
-                    
-                    return;
-                }
-                
-            } catch (error) {
-                console.log('Could not load avatar from server URL, trying fallback', error);
-                // Continue to try other methods
-            }
-        }
-        
-        if (this.currentUser?.avatarUrl) {
-            try {
-                // First try to load the avatar directly
-                let avatarUrl = this.currentUser.avatarUrl;
-                
-                // If it's a relative URL, make it absolute
-                if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-                    const baseUrl = window.API_BASE_URL || '';
-                    avatarUrl = `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
-                }
-                
+            // Update UI
+            if (userAvatar) {
                 // Add cache-busting parameter
                 const separator = avatarUrl.includes('?') ? '&' : '?';
-                const timestamp = new Date().getTime();
-                avatarUrl = `${avatarUrl}${separator}t=${timestamp}`;
-                
-                // Try to load the image directly first
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                
-                // Set a timeout for the image load
-                const loadPromise = new Promise((resolve) => {
-                    const timer = setTimeout(() => {
-                        img.onload = null;
-                        img.onerror = null;
-                        resolve(false);
-                    }, 5000);
-                    
-                    img.onload = () => {
-                        clearTimeout(timer);
-                        resolve(true);
-                    };
-                    img.onerror = () => {
-                        clearTimeout(timer);
-                        resolve(false);
-                    };
-                    img.src = avatarUrl;
-                });
-                
-                const loaded = await loadPromise;
-                
-                if (loaded) {
-                    this.setAvatarImage(userAvatar, avatarUrl);
-                    return;
-                }
-                
-                // If direct load fails, show initials
-                this.showInitials(userAvatar);
-                
-            } catch (error) {
-                console.error('Error loading avatar:', error);
+                const urlWithCacheBust = `${avatarUrl}${separator}t=${Date.now()}`;
+                this.setAvatarImage(userAvatar, urlWithCacheBust);
+            }
+            
+            // Update local storage
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            user.avatar = this.currentUser.avatar;
+            user.avatarUrl = this.currentUser.avatarUrl;
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Show success message
+            this.showNotification('✅ Profile picture updated successfully!', 'success');
+        } else {
+            throw new Error('No avatar URL returned from server');
+        }
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = originalBtnHTML || 'Change Avatar';
+        }
+    }
+
+    async updateAvatarUI() {
+        const userAvatar = document.getElementById('userAvatar');
+        if (!userAvatar) {
+            console.log('updateAvatarUI: No user avatar element found');
+            return;
+        return;
+    }
+    
+    // Check if we have a cached avatar URL in local storage
+    const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Try to get the avatar URL from currentUser or cached user
+    let avatarUrl = this.currentUser?.avatarUrl || cachedUser?.avatarUrl;
+    
+    if (avatarUrl) {
+        // Make sure the URL is absolute
+        if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+            avatarUrl = `${window.API_BASE_URL || ''}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+        }
+        
+        // Add cache-busting parameter
+        const separator = avatarUrl.includes('?') ? '&' : '?';
+        const urlWithCacheBust = `${avatarUrl}${separator}t=${Date.now()}`;
+        
+        console.log('Setting avatar image from URL:', urlWithCacheBust);
+        
+        try {
+            // First check if the image exists
+            const imageExists = await this.checkImageExists(urlWithCacheBust);
+            if (imageExists) {
+                await this.setAvatarImage(userAvatar, urlWithCacheBust);
+            } else {
+                console.log('Avatar image not found at URL, showing initials');
                 this.showInitials(userAvatar);
             }
-        } else {
+        } catch (error) {
+            console.error('Error checking avatar image:', error);
             this.showInitials(userAvatar);
         }
+    } else {
+        // No avatar URL found, show initials
+        console.log('No avatar URL found, showing initials');
+        this.showInitials(userAvatar);
+    }
+}
+
+async setAvatarImage(element, imageUrl) {
+    if (!element || !imageUrl) {
+        console.log('setAvatarImage: Missing element or imageUrl');
+        return;
     }
     
-    async loadAvatarImage(url, token = null) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            
-            // If we have a token, add it to the headers
-            if (token) {
-                img.crossOrigin = 'use-credentials';
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.responseType = 'blob';
-                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                xhr.onload = function() {
-                    if (this.status === 200) {
-                        const blob = this.response;
-                        const objectUrl = URL.createObjectURL(blob);
-                        resolve(objectUrl);
-                    } else {
-                        resolve(null);
-                    }
-                };
-                xhr.onerror = function() {
-                    resolve(null);
-                };
-                xhr.send();
-            } else {
-                // Try with anonymous CORS first
-                img.crossOrigin = 'anonymous';
-                img.onload = function() { resolve(url); };
-                img.onerror = function() { resolve(null); };
-                img.src = url;
-            }
-        });
-    }
+    console.log('Setting avatar image:', imageUrl);
     
-    // Helper method to load an image with a timeout
-    async loadImageWithTimeout(url, timeout = 3000) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            
-            // If the URL is from the same origin, use CORS
-            try {
-                const urlObj = new URL(url, window.location.origin);
-                if (urlObj.hostname === window.location.hostname) {
-                    img.crossOrigin = 'use-credentials';
-                } else {
-                    img.crossOrigin = 'anonymous';
-                }
-            } catch (e) {
-                console.warn('Error setting CORS policy:', e);
-            }
-            
-            const timer = setTimeout(() => {
-                img.onload = null;
-                img.onerror = null;
-                console.log('Image load timeout:', url);
-                resolve(false);
-            }, timeout);
-            
-            img.onload = () => {
-                clearTimeout(timer);
-                console.log('Image loaded successfully:', url);
-                // Verify the image has actual content
-                if (img.width > 0 && img.height > 0) {
-                    resolve(true);
-                } else {
-                    console.error('Image has zero dimensions:', url);
-                    resolve(false);
-                }
-            };
-            
-            img.onerror = (e) => {
-                clearTimeout(timer);
-                console.error('Error loading image:', url, e);
-                resolve(false);
-            };
-            
-            // Add cache-busting parameter
-            const separator = url.includes('?') ? '&' : '?';
-            img.src = `${url}${separator}t=${Date.now()}`;
-        });
-    }
-    
-    setAvatarImage(element, imageUrl) {
-        if (!element || !imageUrl) {
-            console.log('setAvatarImage: Missing element or imageUrl');
-            return;
+    try {
+        // First check if the image exists
+        const imageExists = await this.checkImageExists(imageUrl);
+        if (!imageExists) {
+            throw new Error('Image does not exist at the specified URL');
         }
         
-        console.log('Setting avatar image:', imageUrl);
-        
-        // If it's a blob URL or data URL, use it directly
-        if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
-            element.style.backgroundImage = `url(${imageUrl})`;
-            element.textContent = ''; // Clear any initials
-            
-            // Also update the profile picture in the navigation if it exists
-            const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
-            if (navAvatar) {
-                navAvatar.style.backgroundImage = `url(${imageUrl})`;
-                navAvatar.textContent = '';
-            }
-            
-            // Update local storage with the blob URL
-            if (this.currentUser) {
-                this.currentUser.avatarUrl = imageUrl;
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                user.avatarUrl = imageUrl;
-                localStorage.setItem('user', JSON.stringify(user));
-            }
-        } else {
-            // For server URLs, add cache-busting parameter
-            const separator = imageUrl.includes('?') ? '&' : '?';
-            const timestamp = new Date().getTime();
-            const urlWithCacheBust = `${imageUrl}${separator}t=${timestamp}`;
-            
-            console.log('Using server URL with cache-busting:', urlWithCacheBust);
-            
-            // Create a new image to verify it loads
+        // Create a new Image object to load the image
+        return new Promise((resolve, reject) => {
             const img = new Image();
+            
+            // Set crossOrigin to anonymous to handle CORS
+            img.crossOrigin = 'anonymous';
+            
+            // Add cache-busting parameter
+            const separator = imageUrl.includes('?') ? '&' : '?';
+            const urlWithCacheBust = `${imageUrl}${separator}t=${Date.now()}`;
+            
+            // Set timeout for image loading
+            const timeout = setTimeout(() => {
+                img.onload = null;
+                img.onerror = null;
+                reject(new Error('Image load timeout'));
+            }, 10000); // 10 second timeout
             
             // Set CORS policy
             try {
@@ -714,42 +597,85 @@ class ProfileManager {
             };
             
             img.src = urlWithCacheBust;
-        }
-        
-        // Ensure proper styling
-        element.style.backgroundSize = 'cover';
-        element.style.backgroundPosition = 'center';
+        });
+    } catch (error) {
+        console.error('Error setting avatar image:', error);
+        this.showInitials(element);
     }
+}
+
+showNotification(message, type = 'info') {
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.querySelector('.notification-container');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.className = 'notification-container';
+        document.body.appendChild(notificationContainer);
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
     
+    // Add to container
+    notificationContainer.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            notification.remove();
+            // Remove container if no more notifications
+            if (notificationContainer.children.length === 0) {
+                notificationContainer.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+
+    // Show initials if no avatar is set
     showInitials(element) {
-        if (!element) {
-            console.log('showInitials: No element provided');
-            return;
-        }
-        
-        element.style.backgroundImage = '';
-        element.style.backgroundSize = 'cover';
-        element.style.backgroundPosition = 'center';
-        
-        if (!this.currentUser) {
-            console.log('showInitials: No current user data');
-            element.textContent = 'U';
-            return;
-        }
-        
-        // Get the first letter of the username or email
-        const name = this.currentUser.username || this.currentUser.email || 'U';
-        const initial = name.charAt(0).toUpperCase();
-        
-        console.log('Showing initials:', initial);
-        element.textContent = initial;
-        
-        // Also update the profile picture in the navigation if it exists
-        const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
-        if (navAvatar) {
-            navAvatar.textContent = initial;
-            navAvatar.style.backgroundImage = 'none';
-        }
+        // ... existing showInitials implementation ...
+    }
+}
+
+// Show initials if no avatar is set
+function showInitials(element) {
+    if (!element) {
+        console.log('showInitials: No element provided');
+        return;
+    }
+
+    element.style.backgroundImage = '';
+    element.style.backgroundSize = 'cover';
+    element.style.backgroundPosition = 'center';
+
+    if (!this.currentUser) {
+        console.log('showInitials: No current user data');
+        element.textContent = 'U';
+        return;
+    }
+
+    // Get the first letter of the username or email
+    const name = this.currentUser.username || this.currentUser.email || 'U';
+    const initial = name.charAt(0).toUpperCase();
+
+    console.log('Showing initials:', initial);
+    element.textContent = initial;
+
+    // Also update the profile picture in the navigation if it exists
+    const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
+    if (navAvatar) {
+        navAvatar.textContent = initial;
+        navAvatar.style.backgroundImage = 'none';
     }
 }
 
