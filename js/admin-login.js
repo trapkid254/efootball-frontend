@@ -2,11 +2,29 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('adminLoginForm');
     const errorEl = document.getElementById('loginError');
     const devFill = document.getElementById('devFill');
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    // Toggle password visibility
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            const icon = this.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        });
+    }
 
     devFill?.addEventListener('click', function (e) {
         e.preventDefault();
-        document.getElementById('identifier').value = '0712345678';
-        document.getElementById('password').value = 'Admin@1234';
+        document.getElementById('identifier').value = '12345'; // Efootball ID
+        document.getElementById('password').value = '#Okwonkwo254';
     });
 
     form.addEventListener('submit', async function (e) {
@@ -17,14 +35,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const password = document.getElementById('password').value;
 
         try {
-            const body = {};
-            const whatsappRegex = /^(07\d{8}|2547\d{8}|\+2547\d{8})$/;
-            if (whatsappRegex.test(identifier.replace(/\s/g, ''))) {
-                body.whatsapp = identifier;
-            } else {
-                body.efootballId = identifier;
-            }
-            body.password = password;
+            const body = {
+                whatsapp: identifier,  // Always send both fields for better compatibility
+                efootballId: identifier,
+                password: password
+            };
 
             const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
             const resp = await fetch(`${apiBase}/api/auth/login`, {
