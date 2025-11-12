@@ -24,6 +24,44 @@ class TonaKikwetuApp {
             });
         }
 
+        // Mobile menu toggle
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const navMenu = document.querySelector('.nav-menu');
+        
+        if (mobileMenuBtn && navMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+                mobileMenuBtn.classList.toggle('active');
+                document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+            });
+            
+            // Close menu when clicking on a nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    navMenu.classList.remove('active');
+                    mobileMenuBtn.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (navMenu && mobileMenuBtn) {
+                const isClickInside = navMenu.contains(e.target) || mobileMenuBtn.contains(e.target);
+                if (!isClickInside && navMenu.classList.contains('active')) {
+                    navMenu.classList.remove('active');
+                    mobileMenuBtn.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+        });
+        
+        // Add touch support for mobile
+        if ('ontouchstart' in window) {
+            document.documentElement.classList.add('touch-device');
+        }
+
         // Password visibility toggle
         document.addEventListener('click', (e) => {
             if (e.target.closest('.toggle-password')) {
