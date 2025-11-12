@@ -30,14 +30,30 @@ class Dashboard {
 
     setupEventListeners() {
         // Theme toggle
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            this.toggleTheme();
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleTheme();
+            });
+        }
+
+        // Navigation links - prevent default and handle navigation manually
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = link.getAttribute('href');
+            });
         });
 
         // Logout button
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            this.logout();
-        });
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.logout();
+            });
+        }
     }
 
     toggleTheme() {
