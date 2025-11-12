@@ -100,21 +100,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 let data;
                 try {
                     data = await response.json();
+                    console.log('Login response data:', data);
                 } catch (parseError) {
-                    console.error('Error parsing response:', parseError);
-                    throw new Error('Invalid response from server');
+                    console.error('Error parsing response:', parseError, 'Response status:', response.status);
+                    const responseText = await response.text();
+                    console.error('Raw response:', responseText);
+                    throw new Error('Invalid response from server. Please try again.');
                 }
 
                 // Check for errors
                 if (!response.ok) {
-                    const errorMessage = data?.message || 
-                                      (response.status === 401 ? 'Invalid credentials' : 
-                                      response.status === 403 ? 'Access denied' :
-                                      'Login failed');
+                    console.error('Login failed with status:', response.status, 'Details:', data);
+                    
+                    let errorMessage = 'Login failed';
+                    if (response.status === 401) {
+                        errorMessage = data?.details || 'Invalid credentials. Please check your username and password.';
+                    } else if (response.status === 403) {
+                        errorMessage = 'Access denied. You do not have permission to access this resource.';
+                    } else if (data?.message) {
+                        errorMessage = data.message;
+                    }
+                    
                     throw new Error(errorMessage);
                 }
 
                 if (data.user?.role !== 'admin') {
+                    console.error('Login failed: User is not an admin');
                     throw new Error('This account does not have admin privileges');
                 }
 
