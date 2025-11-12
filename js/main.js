@@ -115,14 +115,23 @@ class TonaKikwetuApp {
 
     setupSmoothScrolling() {
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            // Skip the registration link to prevent the error
+            if (anchor.id === 'showRegister' || !anchor.getAttribute('href')) {
+                return;
+            }
+            
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                const targetId = this.getAttribute('href');
+                // Make sure the href is not just '#'
+                if (targetId && targetId !== '#') {
+                    const target = document.querySelector(targetId);
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
                 }
             });
         });
@@ -166,60 +175,100 @@ class TonaKikwetuApp {
     }
 
     async handleLogin() {
-        const formData = new FormData(document.getElementById('loginForm'));
+        const form = document.getElementById('loginForm');
+        if (!form) return;
+
+        const formData = new FormData(form);
         const loginData = {
-            whatsapp: formData.get('whatsapp'),
-            efootballId: formData.get('efootballId'),
-            password: formData.get('password')
+            whatsapp: formData.get('whatsapp')?.trim() || '',
+            efootballId: formData.get('efootballId')?.trim() || '',
+            password: formData.get('password') || ''
         };
 
         // Basic validation
-        if (!this.validatePhone(loginData.whatsapp)) {
-            this.showNotification('Please enter a valid WhatsApp number', 'error');
+        if ((!loginData.whatsapp && !loginData.efootballId) || !loginData.password) {
+            this.showNotification('Please provide your login credentials', 'error');
             return;
         }
 
         try {
-            // Simulate API call
             this.showLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // For demo purposes, accept any login
-            this.currentUser = {
-                id: 1,
-                whatsapp: loginData.whatsapp,
-                efootballId: loginData.efootballId,
-                name: loginData.efootballId,
-                avatar: 'U'
-            };
-            
-            localStorage.setItem('token', 'demo-token');
-            localStorage.setItem('user', JSON.stringify(this.currentUser));
-            
-            this.hideAllModals();
-            this.updateUIForAuth();
-            this.showNotification('Login successful!', 'success');
+            // Call the login API
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(loginData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
+
+            // Login successful
+            if (data.token && data.user) {
+                // Store the token and user data
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                this.currentUser = data.user;
+                
+                this.hideAllModals();
+                this.updateUIForAuth();
+                this.showNotification('Login successful!', 'success');
+                
+                // Redirect based on user role
+                if (this.currentUser.role === 'admin') {
+                    window.location.href = 'admin/dashboard.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                throw new Error('Invalid response from server');
+            }
             
         } catch (error) {
             console.error('Login error:', error);
-            this.showNotification('Login failed. Please try again.', 'error');
+            
+            // More specific error messages based on error type
+            let errorMessage = 'Login failed. Please check your credentials.';
+            if (error.message.includes('credentials') || error.message.includes('Invalid')) {
+                errorMessage = 'Invalid credentials. Please try again.';
+            } else if (error.message.includes('verified')) {
+                errorMessage = 'Please verify your account before logging in.';
+            } else if (error.message.includes('active')) {
+                errorMessage = 'Your account has been deactivated. Please contact support.';
+            }
+            
+            this.showNotification(errorMessage, 'error');
         } finally {
             this.showLoading(false);
         }
     }
 
     async handleRegister() {
-        const formData = new FormData(document.getElementById('registerForm'));
+        const form = document.getElementById('registerForm');
+        if (!form) return;
+
+        const formData = new FormData(form);
         const registerData = {
-            whatsapp: formData.get('whatsapp'),
-            efootballId: formData.get('efootballId'),
-            password: formData.get('password'),
-            confirmPassword: formData.get('confirmPassword')
+            whatsapp: formData.get('whatsapp')?.trim() || '',
+            efootballId: formData.get('efootballId')?.trim() || '',
+            password: formData.get('password') || '',
+            confirmPassword: formData.get('confirmPassword') || ''
         };
 
         // Validation
+        if (!registerData.whatsapp || !registerData.efootballId || !registerData.password) {
+            this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+
         if (!this.validatePhone(registerData.whatsapp)) {
-            this.showNotification('Please enter a valid WhatsApp number', 'error');
+            this.showNotification('Please enter a valid WhatsApp number (e.g., 0712345678, +254712345678, or 254712345678)', 'error');
             return;
         }
 
@@ -235,27 +284,47 @@ class TonaKikwetuApp {
 
         try {
             this.showLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Simulate successful registration
-            this.currentUser = {
-                id: Date.now(),
-                whatsapp: registerData.whatsapp,
-                efootballId: registerData.efootballId,
-                name: registerData.efootballId,
-                avatar: 'U'
-            };
+            // Call the registration API
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    whatsapp: registerData.whatsapp,
+                    efootballId: registerData.efootballId,
+                    password: registerData.password
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Registration failed');
+            }
+
+            // Registration successful
+            this.showNotification(data.message || 'Registration successful!', 'success');
             
-            localStorage.setItem('token', 'demo-token');
-            localStorage.setItem('user', JSON.stringify(this.currentUser));
-            
-            this.hideAllModals();
-            this.updateUIForAuth();
-            this.showNotification('Registration successful! Welcome to TONA KIKWETU!', 'success');
+            // Auto-login after successful registration if token is returned
+            if (data.token && data.user) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                this.currentUser = data.user;
+                this.hideAllModals();
+                this.updateUIForAuth();
+                
+                // Redirect to dashboard or home page
+                window.location.href = 'dashboard.html';
+            } else {
+                // If auto-login didn't happen, show login form
+                this.showLoginModal();
+            }
             
         } catch (error) {
             console.error('Registration error:', error);
-            this.showNotification('Registration failed. Please try again.', 'error');
+            this.showNotification(error.message || 'Registration failed. Please try again.', 'error');
         } finally {
             this.showLoading(false);
         }
