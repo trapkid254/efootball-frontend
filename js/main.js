@@ -165,12 +165,32 @@ class TonaKikwetuApp {
 
     showRegisterModal() {
         this.hideAllModals();
-        document.getElementById('registerModal').style.display = 'block';
+        const registerModal = document.getElementById('registerModal');
+        if (registerModal) {
+            registerModal.style.display = 'block';
+            registerModal.classList.add('show');
+            // Focus on the first input field
+            const firstInput = registerModal.querySelector('input');
+            if (firstInput) firstInput.focus();
+            
+            // Force reflow to ensure the transition works
+            registerModal.offsetHeight;
+            
+            // Add click event listener to close modal when clicking outside
+            registerModal.onclick = (e) => {
+                if (e.target === registerModal) {
+                    this.hideAllModals();
+                }
+            };
+        } else {
+            console.error('Register modal element not found');
+        }
     }
 
     hideAllModals() {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.style.display = 'none';
+            modal.classList.remove('show');
         });
     }
 
