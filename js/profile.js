@@ -262,6 +262,13 @@ class ProfileManager {
             localStorage.setItem('user', JSON.stringify({ ...user, ...result }));
             
             this.showNotification('✅ Profile picture updated successfully!', 'success');
+            
+            // Update the avatar UI with the new image
+            const userAvatar = document.getElementById('userAvatar');
+            if (userAvatar) {
+                userAvatar.style.backgroundImage = `url(${result.avatarUrl})`;
+                userAvatar.textContent = '';
+            }
         } catch (error) {
             console.error('Error uploading avatar:', error);
             this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
