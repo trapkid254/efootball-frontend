@@ -309,35 +309,63 @@ class ProfileManager {
                 throw new Error(errorData.message || 'Failed to upload avatar. The server returned an error.');
             }
 
-            // Get the response as a blob
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
+            // Get the server response
+            const result = await response.json();
             
-            // Update the UI with the blob URL
-            if (userAvatar) {
-                userAvatar.style.backgroundImage = `url(${objectUrl})`;
-                userAvatar.style.backgroundSize = 'cover';
-                userAvatar.style.backgroundPosition = 'center';
-                userAvatar.textContent = '';
+            if (result && result.avatarUrl) {
+                // Store the server URL
+                const serverAvatarUrl = result.avatarUrl.startsWith('http') 
+                    ? result.avatarUrl 
+                    : `${window.API_BASE_URL || ''}${result.avatarUrl.startsWith('/') ? '' : '/'}${result.avatarUrl}`;
                 
-                // Store the blob URL in the user data
-                this.currentUser.avatarUrl = objectUrl;
-                this.currentUser.avatarBlobUrl = objectUrl; // Store the blob URL separately
+                // Update the current user data
+                this.currentUser.avatarUrl = serverAvatarUrl;
                 
-                // Also store the server URL for future use
-                try {
-                    const result = await response.clone().json();
-                    if (result?.avatarUrl) {
-                        this.currentUser.avatarUrl = result.avatarUrl;
+                // Update the UI with the new avatar
+                if (userAvatar) {
+                    // First try to load the server URL
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    try {
+                        // Try to load the server URL
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = () => reject(new Error('Failed to load image'));
+                            img.src = serverAvatarUrl;
+                        });
+                        
+                        // If we get here, the server URL works
+                        this.setAvatarImage(userAvatar, serverAvatarUrl);
+                    } catch (e) {
+                        console.log('Could not load avatar from server URL, using blob URL');
+                        // Fall back to blob URL if server URL fails
+                        const blob = await response.blob();
+                        const objectUrl = URL.createObjectURL(blob);
+                        this.currentUser.avatarBlobUrl = objectUrl;
+                        this.setAvatarImage(userAvatar, objectUrl);
                     }
-                } catch (e) {
-                    console.log('Could not parse server response for avatar URL');
                 }
                 
                 // Update local storage
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 user.avatarUrl = this.currentUser.avatarUrl;
-                user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
+                if (this.currentUser.avatarBlobUrl) {
+                    user.avatarBlobUrl = this.currentUser.avatarBlobUrl;
+                }
+                localStorage.setItem('user', JSON.stringify(user));
+            } else {
+                // Fallback if no avatarUrl in response
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                this.currentUser.avatarBlobUrl = objectUrl;
+                if (userAvatar) {
+                    this.setAvatarImage(userAvatar, objectUrl);
+                }
+                
+                // Update local storage
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                user.avatarBlobUrl = objectUrl;
                 localStorage.setItem('user', JSON.stringify(user));
             }
             
@@ -423,17 +451,26 @@ class ProfileManager {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
                 
+                // Set a timeout for the image load
                 const loadPromise = new Promise((resolve) => {
-                    img.onload = () => resolve(true);
-                    img.onerror = () => resolve(false);
+                    const timer = setTimeout(() => {
+                        img.onload = null;
+                        img.onerror = null;
+                        resolve(false);
+                    }, 5000);
+                    
+                    img.onload = () => {
+                        clearTimeout(timer);
+                        resolve(true);
+                    };
+                    img.onerror = () => {
+                        clearTimeout(timer);
+                        resolve(false);
+                    };
                     img.src = avatarUrl;
                 });
                 
-                // Wait for the image to load or fail (with a timeout)
-                const loaded = await Promise.race([
-                    loadPromise,
-                    new Promise(resolve => setTimeout(() => resolve(false), 3000))
-                ]);
+                const loaded = await loadPromise;
                 
                 if (loaded) {
                     this.setAvatarImage(userAvatar, avatarUrl);
