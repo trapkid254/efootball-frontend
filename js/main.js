@@ -142,7 +142,16 @@ class TonaKikwetuApp {
 
     showLoginModal() {
         this.hideAllModals();
-        document.getElementById('loginModal').style.display = 'block';
+        const loginModal = document.getElementById('loginModal');
+        if (loginModal) {
+            loginModal.style.display = 'block';
+            loginModal.classList.add('show');
+            // Focus on the first input field
+            const firstInput = loginModal.querySelector('input');
+            if (firstInput) firstInput.focus();
+        } else {
+            console.error('Login modal element not found');
+        }
     }
 
     showRegisterModal() {
