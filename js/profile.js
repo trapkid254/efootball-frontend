@@ -12,23 +12,64 @@ class ProfileManager {
 
     async loadUserProfile() {
         try {
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/me`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch user profile');
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found. Please log in again.');
             }
 
-            this.currentUser = await response.json();
+            const apiUrl = `${window.API_BASE_URL || ''}/api/users/me`;
+            console.log('Fetching user profile from:', apiUrl);
+            
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include' // Include cookies if using session-based auth
+            });
+
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                let errorData;
+                try {
+                    errorData = await response.json();
+                    console.error('Error response:', errorData);
+                } catch (e) {
+                    console.error('Could not parse error response');
+                }
+                
+                if (response.status === 401) {
+                    // Token might be expired or invalid
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                throw new Error(errorData?.message || `Failed to fetch user profile: ${response.status} ${response.statusText}`);
+            }
+
+            const userData = await response.json();
+            console.log('User data received:', userData);
+            
+            this.currentUser = userData;
             localStorage.setItem('user', JSON.stringify(this.currentUser));
             this.updateUI();
         } catch (error) {
-            console.error('Error loading user profile:', error);
-            this.showNotification('Failed to load profile. Please try again.', 'error');
+            console.error('Error loading user profile:', {
+                message: error.message,
+                name: error.name,
+                stack: error.stack
+            });
+            this.showNotification(error.message || 'Failed to load profile. Please try again.', 'error');
+            
+            // If it's a network error, try to show more details
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                console.error('Network error. Check if the server is running and accessible.');
+                console.error('Current API base URL:', window.API_BASE_URL || 'Not set (using relative URL)');
+            }
         }
     }
 
