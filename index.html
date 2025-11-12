@@ -169,9 +169,14 @@
                     <label for="efootballId">Efootball ID</label>
                     <input type="text" id="efootballId" name="efootballId" placeholder="Your Efootball Player ID" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group password-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <div class="password-input-container">
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <span class="toggle-password" data-target="password">
+                            <i class="far fa-eye"></i>
+                        </span>
+                    </div>
                 </div>
                 <button type="submit" class="btn-primary btn-full">Login</button>
             </form>
@@ -193,9 +198,28 @@
                     <label for="regEfootballId">Efootball ID</label>
                     <input type="text" id="regEfootballId" name="efootballId" placeholder="Your Efootball Player ID" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group password-group">
                     <label for="regPassword">Password</label>
-                    <input type="password" id="regPassword" name="password" placeholder="Create a strong password" required>
+                    <div class="password-input-container">
+                        <input type="password" id="regPassword" name="password" placeholder="Create a strong password" required 
+                               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                               title="Must contain at least 8 characters, one uppercase, one lowercase, one number and one special character">
+                        <span class="toggle-password" data-target="regPassword">
+                            <i class="far fa-eye"></i>
+                        </span>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-meter">
+                            <div class="strength-meter-fill" data-strength="0"></div>
+                        </div>
+                        <ul class="password-requirements">
+                            <li data-requirement="length">At least 8 characters</li>
+                            <li data-requirement="uppercase">At least one uppercase letter</li>
+                            <li data-requirement="lowercase">At least one lowercase letter</li>
+                            <li data-requirement="number">At least one number</li>
+                            <li data-requirement="special">At least one special character</li>
+                        </ul>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="regConfirmPassword">Confirm Password</label>

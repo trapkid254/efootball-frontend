@@ -1047,6 +1047,96 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.1);
 }
 
+/* Password Input Group */
+.password-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-container input {
+    padding-right: 2.5rem;
+    width: 100%;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    transition: color 0.2s ease;
+    z-index: 2;
+}
+
+.toggle-password:hover {
+    color: var(--accent-color);
+}
+
+/* Password Strength Meter */
+.password-strength {
+    margin-top: 0.75rem;
+}
+
+.strength-meter {
+    height: 4px;
+    background-color: var(--bg-primary);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+}
+
+.strength-meter-fill {
+    height: 100%;
+    width: 0%;
+    background-color: #e74c3c;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Password Requirements List */
+.password-requirements {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+    font-size: 0.85rem;
+}
+
+.password-requirements li {
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s ease;
+}
+
+.password-requirements li::before {
+    content: '✗';
+    margin-right: 0.5rem;
+    color: #e74c3c;
+    transition: all 0.2s ease;
+}
+
+.password-requirements li.valid {
+    color: var(--success-color);
+}
+
+.password-requirements li.valid::before {
+    content: '✓';
+    color: var(--success-color);
+}
+
+/* Strength Meter Colors */
+.strength-meter-fill[data-strength="0"] { width: 0%; background-color: #e74c3c; } /* Weak */
+.strength-meter-fill[data-strength="1"] { width: 25%; background-color: #e74c3c; } /* Weak */
+.strength-meter-fill[data-strength="2"] { width: 50%; background-color: #f39c12; } /* Fair */
+.strength-meter-fill[data-strength="3"] { width: 75%; background-color: #3498db; } /* Good */
+.strength-meter-fill[data-strength="4"] { width: 100%; background-color: #2ecc71; } /* Strong */
+
 .btn-full {
     width: 100%;
     padding: 1rem;

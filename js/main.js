@@ -24,6 +24,38 @@ class TonaKikwetuApp {
             });
         }
 
+        // Password visibility toggle
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.toggle-password')) {
+                const toggleBtn = e.target.closest('.toggle-password');
+                const targetId = toggleBtn.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = toggleBtn.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        });
+
+        // Password strength meter
+        const passwordInput = document.getElementById('regPassword');
+        if (passwordInput) {
+            passwordInput.addEventListener('input', this.updatePasswordStrength.bind(this));
+        }
+        
+        // Confirm password validation
+        const confirmPasswordInput = document.getElementById('regConfirmPassword');
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', this.validatePasswordMatch.bind(this));
+        }
+
         // Login Modal - only if element exists
         const loginBtn = document.getElementById('loginBtn');
         if (loginBtn) {
@@ -353,6 +385,52 @@ class TonaKikwetuApp {
     validatePhone(phone) {
         const phoneRegex = /^(07\d{8}|2547\d{8}|\+2547\d{8})$/;
         return phoneRegex.test(phone.replace(/\s/g, ''));
+    }
+
+    updatePasswordStrength(e) {
+        const password = e.target.value;
+        const strengthMeter = document.querySelector('.strength-meter-fill');
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+
+        // Update requirements list
+        Object.keys(requirements).forEach(requirement => {
+            const element = document.querySelector(`[data-requirement="${requirement}"]`);
+            if (element) {
+                element.classList.toggle('valid', requirements[requirement]);
+            }
+        });
+
+        // Calculate strength (0-4)
+        const strength = Object.values(requirements).filter(Boolean).length;
+        
+        // Update strength meter
+        if (strengthMeter) {
+            strengthMeter.setAttribute('data-strength', strength);
+        }
+
+        // Update input border color based on strength
+        const input = e.target;
+        input.style.borderColor = strength >= 3 ? '#2ecc71' : strength >= 2 ? '#3498db' : '#e74c3c';
+    }
+
+    validatePasswordMatch() {
+        const password = document.getElementById('regPassword');
+        const confirmPassword = document.getElementById('regConfirmPassword');
+        
+        if (!password || !confirmPassword) return;
+        
+        if (confirmPassword.value && password.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Passwords do not match');
+            confirmPassword.reportValidity();
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
     }
 
     loadSampleData() {
