@@ -242,46 +242,112 @@ class Dashboard {
     }
 
     async loadRecentActivity() {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 600));
-        
-        const activities = [
-            {
-                type: 'match',
-                icon: 'fa-gamepad',
-                title: 'Match Result Submitted',
-                description: 'Weekly Champions Cup - Round of 32',
-                time: '2 hours ago'
-            },
-            {
-                type: 'tournament',
-                icon: 'fa-trophy',
-                title: 'Tournament Joined',
-                description: 'Monthly Grand Tournament',
-                time: '1 day ago'
-            },
-            {
-                type: 'achievement',
-                icon: 'fa-medal',
-                title: 'New Achievement',
-                description: '10 Matches Won',
-                time: '2 days ago'
-            }
-        ];
+        try {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/activity/recent`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        const container = document.getElementById('recentActivity');
-        container.innerHTML = activities.map(activity => `
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas ${activity.icon}"></i>
+            if (!response.ok) {
+                throw new Error('Failed to fetch recent activity');
+            }
+
+            const data = await response.json();
+            const activities = data.activities || [];
+            const container = document.getElementById('recentActivity');
+
+            if (activities.length === 0) {
+                container.innerHTML = '<p class="empty-state">No recent activity</p>';
+                return;
+            }
+
+            // Define activity icons based on type
+            const activityIcons = {
+                'match': 'fa-gamepad',
+                'tournament': 'fa-trophy',
+                'achievement': 'fa-medal',
+                'registration': 'fa-user-plus',
+                'result': 'fa-flag-checkered'
+            };
+
+            container.innerHTML = activities.map(activity => {
+                const icon = activityIcons[activity.type] || 'fa-bell';
+                const timeAgo = this.formatTimeAgo(new Date(activity.timestamp));
+                
+                return `
+                    <div class="activity-item" data-type="${activity.type}">
+                        <div class="activity-icon">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <h4>${activity.title}</h4>
+                            <p>${activity.description}</p>
+                        </div>
+                        <div class="activity-time">${timeAgo}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add click handlers to activity items
+            this.setupActivityItemClickHandlers();
+            
+        } catch (error) {
+            console.error('Error loading recent activity:', error);
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Failed to load activity</p>
+                    <button class="btn-retry" onclick="window.dashboard.loadRecentActivity()">
+                        <i class="fas fa-sync-alt"></i> Try Again
+                    </button>
                 </div>
-                <div class="activity-content">
-                    <h4>${activity.title}</h4>
-                    <p>${activity.description}</p>
-                </div>
-                <div class="activity-time">${activity.time}</div>
-            </div>
-        `).join('') || '<p class="empty-state">No recent activity</p>';
+            `;
+        }
+    }
+
+    formatTimeAgo(date) {
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        let interval = Math.floor(seconds / 31536000);
+        if (interval >= 1) return `${interval} year${interval === 1 ? '' : 's'} ago`;
+        
+        interval = Math.floor(seconds / 2592000);
+        if (interval >= 1) return `${interval} month${interval === 1 ? '' : 's'} ago`;
+        
+        interval = Math.floor(seconds / 86400);
+        if (interval >= 1) return `${interval} day${interval === 1 ? '' : 's'} ago`;
+        
+        interval = Math.floor(seconds / 3600);
+        if (interval >= 1) return `${interval} hour${interval === 1 ? '' : 's'} ago`;
+        
+        interval = Math.floor(seconds / 60);
+        if (interval >= 1) return `${interval} minute${interval === 1 ? '' : 's'} ago`;
+        
+        return 'Just now';
+    }
+    
+    setupActivityItemClickHandlers() {
+        document.querySelectorAll('.activity-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.getAttribute('data-type');
+                // You can add specific navigation based on activity type
+                switch(type) {
+                    case 'match':
+                        // Navigate to match details if needed
+                        break;
+                    case 'tournament':
+                        // Navigate to tournament details if needed
+                        break;
+                    default:
+                        // Default action or do nothing
+                        break;
+                }
+            });
+        });
     }
 
     logout() {
