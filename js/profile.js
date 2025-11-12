@@ -315,9 +315,11 @@ class ProfileManager {
             // Get the response as JSON
             const result = await response.json();
             
-            if (result.avatar) {
-                // Construct the full avatar URL
-                const serverAvatarUrl = `${window.API_BASE_URL || ''}/uploads/avatars/${result.avatar}`;
+            if (result.avatarUrl) {
+                // Use the avatar URL from the server
+                const serverAvatarUrl = result.avatarUrl.startsWith('http')
+                    ? result.avatarUrl
+                    : `${window.API_BASE_URL || ''}${result.avatarUrl.startsWith('/') ? '' : '/'}${result.avatarUrl}`;
                 
                 // Update the current user data
                 this.currentUser.avatarUrl = serverAvatarUrl;
