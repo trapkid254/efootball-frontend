@@ -29,10 +29,24 @@ class TonaKikwetuApp {
         const navMenu = document.querySelector('.nav-menu');
         
         if (mobileMenuBtn && navMenu) {
-            mobileMenuBtn.addEventListener('click', () => {
+            // Toggle menu when clicking the mobile menu button
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 navMenu.classList.toggle('active');
                 mobileMenuBtn.classList.toggle('active');
                 document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+                
+                // Toggle between menu and close icon
+                const icon = mobileMenuBtn.querySelector('i');
+                if (icon) {
+                    if (navMenu.classList.contains('active')) {
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    } else {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                }
             });
             
             // Close menu when clicking on a nav link
@@ -41,7 +55,35 @@ class TonaKikwetuApp {
                     navMenu.classList.remove('active');
                     mobileMenuBtn.classList.remove('active');
                     document.body.style.overflow = '';
+                    
+                    // Reset icon to hamburger
+                    const icon = mobileMenuBtn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
                 });
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!navMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                    navMenu.classList.remove('active');
+                    mobileMenuBtn.classList.remove('active');
+                    document.body.style.overflow = '';
+                    
+                    // Reset icon to hamburger
+                    const icon = mobileMenuBtn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                }
+            });
+            
+            // Prevent clicks inside the menu from closing it
+            navMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
         }
         
@@ -343,6 +385,10 @@ class TonaKikwetuApp {
         const form = document.getElementById('registerForm');
         if (!form) return;
 
+        // Reset any previous validation messages
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => input.setCustomValidity(''));
+
         // Check if form is valid
         if (!form.checkValidity()) {
             // Show custom validation messages
@@ -376,8 +422,21 @@ class TonaKikwetuApp {
             return;
         }
 
+        // Format WhatsApp number if needed (add country code if missing)
+        let formattedWhatsapp = registerData.whatsapp;
+        if (!formattedWhatsapp.startsWith('+') && !formattedWhatsapp.startsWith('0')) {
+            formattedWhatsapp = `254${formattedWhatsapp.substring(1)}`; // Assuming Kenyan number
+        } else if (formattedWhatsapp.startsWith('0')) {
+            formattedWhatsapp = `254${formattedWhatsapp.substring(1)}`;
+        }
+
         try {
             this.showLoading(true);
+            console.log('Sending registration request with data:', {
+                whatsapp: formattedWhatsapp,
+                efootballId: registerData.efootballId,
+                password: '[HIDDEN]' // Don't log actual password
+            });
 
             // Call the registration API
             const response = await fetch(`${window.API_BASE_URL || ''}/api/auth/register`, {
@@ -386,13 +445,59 @@ class TonaKikwetuApp {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    whatsapp: registerData.whatsapp,
+                    whatsapp: formattedWhatsapp,
                     efootballId: registerData.efootballId,
                     password: registerData.password
-                })
+                }),
+                credentials: 'include' // Include cookies if needed
             });
 
             const data = await response.json();
+            
+            // If response is not ok, handle the error
+            if (!response.ok) {
+                console.error('Registration failed:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data
+                });
+                
+                // Handle specific error cases
+                if (response.status === 400 && data.errorType === 'VALIDATION_ERROR') {
+                    // Show validation errors to the user
+                    const errorMessages = Object.values(data.errors || {}).join('\n');
+                    this.showNotification(`Validation error: ${errorMessages}`, 'error');
+                    
+                    // Highlight problematic fields
+                    if (data.errors.whatsapp) {
+                        const whatsappInput = document.getElementById('regWhatsapp');
+                        if (whatsappInput) {
+                            whatsappInput.setCustomValidity(data.errors.whatsapp);
+                            whatsappInput.reportValidity();
+                        }
+                    }
+                    if (data.errors.efootballId) {
+                        const efootballInput = document.getElementById('regEfootballId');
+                        if (efootballInput) {
+                            efootballInput.setCustomValidity(data.errors.efootballId);
+                            efootballInput.reportValidity();
+                        }
+                    }
+                    if (data.errors.password) {
+                        const passwordInput = document.getElementById('regPassword');
+                        if (passwordInput) {
+                            passwordInput.setCustomValidity(data.errors.password);
+                            passwordInput.reportValidity();
+                        }
+                    }
+                } else if (response.status === 400 && data.errorType === 'USER_EXISTS') {
+                    this.showNotification(data.message || 'This user already exists', 'error');
+                } else {
+                    this.showNotification(data.message || 'Registration failed. Please try again.', 'error');
+                }
+                
+                throw new Error(data.message || 'Registration failed');
+            }
 
             if (!response.ok) {
                 // Handle specific error types
