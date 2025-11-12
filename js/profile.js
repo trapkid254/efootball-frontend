@@ -727,4 +727,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (themeIcon) {
         themeIcon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
     }
+    
+    // Add cache-busting to avatar URLs
+    document.querySelectorAll('img[src*="/uploads/avatars/"]').forEach(img => {
+        const src = img.getAttribute('src');
+        if (src && !src.includes('?')) {
+            img.src = `${src}?t=${Date.now()}`;
+        }
+    });
 });
