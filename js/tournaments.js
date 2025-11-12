@@ -146,58 +146,118 @@ class TournamentsPage {
         }
     }
 
-    async loadTournaments() {
+    async loadPublicTournaments() {
         try {
-            this.showLoading(true);
-            const apiBase = window.API_BASE_URL || 'http://localhost:5000'; // Changed to localhost for development
+            const apiBase = window.API_BASE_URL || 'http://localhost:5000';
             const params = new URLSearchParams();
-            params.set('page', this.currentPage);
-            params.set('limit', this.itemsPerPage);
-            if (this.filters.status && this.filters.status !== 'all') params.set('status', this.filters.status);
-            if (this.filters.format && this.filters.format !== 'all') params.set('format', this.filters.format);
-
-            // Add cache-busting parameter
+            params.set('status', 'upcoming');
+            params.set('limit', 10);
             params.set('_t', new Date().getTime());
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             try {
                 const resp = await fetch(`${apiBase}/api/tournaments?${params.toString()}`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
 
                 if (!resp.ok) {
-                    const errorData = await resp.json().catch(() => ({}));
-                    throw new Error(errorData.message || `HTTP error! status: ${resp.status}`);
+                    throw new Error(`HTTP error! status: ${resp.status}`);
                 }
 
                 const data = await resp.json();
-                
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to fetch tournaments');
-                }
-
                 const tournaments = data.tournaments || [];
                 
                 if (tournaments.length === 0) {
-                    this.showEmptyState('No tournaments are currently available. New tournaments are added regularly, so please check back soon or refresh the page for updates.', false);
+                    this.showEmptyState('No public tournaments are currently available. Please log in to see all available tournaments.', true);
                     return;
                 }
 
-                this.renderTournaments(tournaments);
-                this.renderPagination(data.pagination?.total || tournaments.length);
+                // Mark all as not registered since this is the public endpoint
+                this.renderTournaments(tournaments.map(t => ({ ...t, isRegistered: false })));
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
+            }
+        } catch (error) {
+            console.error('Error loading public tournaments:', error);
+            this.showEmptyState('Unable to load tournaments. Please try again later or contact support if the problem persists.', true);
+        }
+    }
+
+    async loadTournaments() {
+        try {
+            this.showLoading(true);
+            const apiBase = window.API_BASE_URL || 'http://localhost:5000';
+            
+            // Get the authentication token
+            const token = localStorage.getItem('token');
+            
+            // If user is not logged in, show only public tournaments
+            if (!token) {
+                await this.loadPublicTournaments();
+                return;
+            }
+            
+            // If user is logged in, load their tournaments
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+            try {
+                // First, try to get user's tournaments
+                const [myTournamentsResp, availableResp] = await Promise.all([
+                    fetch(`${apiBase}/api/user/my-tournaments`, { headers, signal: controller.signal }),
+                    fetch(`${apiBase}/api/user/available-tournaments`, { headers, signal: controller.signal })
+                ]);
+                
+                clearTimeout(timeoutId);
+
+                // Handle my tournaments response
+                if (!myTournamentsResp.ok) {
+                    throw new Error(`Failed to fetch your tournaments: ${myTournamentsResp.status}`);
+                }
+                
+                const myTournamentsData = await myTournamentsResp.json();
+                const myTournaments = myTournamentsData.tournaments || [];
+                
+                // Handle available tournaments response
+                let availableTournaments = [];
+                if (availableResp.ok) {
+                    const availableData = await availableResp.json();
+                    availableTournaments = availableData.tournaments || [];
+                }
+                
+                // Combine both lists, marking which ones the user is registered for
+                const allTournaments = [
+                    ...myTournaments.map(t => ({ ...t, isRegistered: true })),
+                    ...availableTournaments.map(t => ({ ...t, isRegistered: false }))
+                ];
+                
+                if (allTournaments.length === 0) {
+                    this.showEmptyState('No tournaments are currently available. Check back later or contact the administrator for upcoming events.', false);
+                    return;
+                }
+                
+                this.renderTournaments(allTournaments);
+                
             } catch (error) {
                 clearTimeout(timeoutId);
                 if (error.name === 'AbortError') {
                     throw new Error('Request timed out. Please check your internet connection.');
                 }
-                throw error;
+                console.error('Error loading tournaments:', error);
+                // Fall back to public tournaments if there's an error
+                await this.loadPublicTournaments();
             }
         } catch (error) {
             console.error('Error loading tournaments:', error);
