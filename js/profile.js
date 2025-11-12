@@ -266,8 +266,30 @@ class ProfileManager {
             // Update the avatar UI with the new image
             const userAvatar = document.getElementById('userAvatar');
             if (userAvatar) {
-                userAvatar.style.backgroundImage = `url(${result.avatarUrl})`;
+                // Ensure we have an absolute URL
+                let avatarUrl = result.avatarUrl;
+                if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                    // If it's a relative URL, prepend the API base URL
+                    const baseUrl = window.API_BASE_URL || '';
+                    // Remove any trailing slashes from base URL and leading slashes from avatar path
+                    avatarUrl = `${baseUrl.replace(/\/+$/, '')}/${avatarUrl.replace(/^\/+/, '')}`;
+                }
+                userAvatar.style.backgroundImage = `url(${avatarUrl})`;
                 userAvatar.textContent = '';
+                
+                // Force refresh the image in case of cache issues
+                if (avatarUrl.includes('?')) {
+                    avatarUrl += '&t=' + new Date().getTime();
+                } else {
+                    avatarUrl += '?t=' + new Date().getTime();
+                }
+                
+                // Create a new image element to preload the avatar
+                const img = new Image();
+                img.onload = function() {
+                    userAvatar.style.backgroundImage = `url(${avatarUrl})`;
+                };
+                img.src = avatarUrl;
             }
         } catch (error) {
             console.error('Error uploading avatar:', error);
