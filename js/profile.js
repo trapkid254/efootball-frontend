@@ -66,9 +66,20 @@ class ProfileManager {
                 const userData = await response.json();
                 console.log('User data received:', userData);
                 
+                // Ensure avatar URL is properly formatted
+                if (userData.avatarUrl && !userData.avatarUrl.startsWith('http')) {
+                    userData.avatarUrl = `${window.API_BASE_URL || ''}${userData.avatarUrl.startsWith('/') ? '' : '/'}${userData.avatarUrl}`;
+                }
+                
                 this.currentUser = userData;
                 localStorage.setItem('user', JSON.stringify(this.currentUser));
+                
+                // Update the UI with the latest user data
                 this.updateUI();
+                
+                // Update the avatar UI specifically
+                await this.updateAvatarUI();
+                
                 return userData;
                 
             } catch (error) {
@@ -366,10 +377,45 @@ class ProfileManager {
         const userAvatar = document.getElementById('userAvatar');
         if (!userAvatar) return;
         
-        // First, try to use the blob URL if available (from recent upload)
-        if (this.currentUser?.avatarBlobUrl) {
-            this.setAvatarImage(userAvatar, this.currentUser.avatarBlobUrl);
-            // Don't return here, try to load the server URL in the background
+        // First, try to use the server URL if available
+        if (this.currentUser?.avatarUrl) {
+            // Add cache-busting parameter to prevent caching issues
+            const separator = this.currentUser.avatarUrl.includes('?') ? '&' : '?';
+            const avatarUrl = `${this.currentUser.avatarUrl}${separator}t=${new Date().getTime()}`;
+            
+            try {
+                // Try to load the avatar with CORS
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                await new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => {
+                        img.onload = null;
+                        img.onerror = null;
+                        reject(new Error('Image load timeout'));
+                    }, 5000);
+                    
+                    img.onload = () => {
+                        clearTimeout(timer);
+                        resolve();
+                    };
+                    
+                    img.onerror = () => {
+                        clearTimeout(timer);
+                        reject(new Error('Failed to load image'));
+                    };
+                    
+                    img.src = avatarUrl;
+                });
+                
+                // If we get here, the image loaded successfully
+                this.setAvatarImage(userAvatar, avatarUrl);
+                return;
+                
+            } catch (error) {
+                console.log('Could not load avatar from server URL, trying fallback', error);
+                // Continue to try other methods
+            }
         }
         
         if (this.currentUser?.avatarUrl) {
