@@ -265,9 +265,6 @@ class ProfileManager {
         } catch (error) {
             console.error('Error uploading avatar:', error);
             this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
-        } catch (error) {
-            console.error('Error uploading avatar:', error);
-            this.showNotification(`❌ ${error.message || 'Failed to upload avatar. Please try again.'}`, 'error');
             
             // Revert to default avatar on error
             const userAvatar = document.getElementById('userAvatar');
@@ -282,9 +279,6 @@ class ProfileManager {
                 uploadBtn.disabled = false;
                 uploadBtn.innerHTML = originalHTML;
             }
-            }
-            // Reset file input
-            event.target.value = '';
         }
     }
 
