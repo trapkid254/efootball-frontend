@@ -252,36 +252,36 @@ class ProfileManager {
     }
 
     async handleAvatarUpload(event) {
+        const fileInput = event.target;
+        const file = fileInput.files[0];
+        const userAvatar = document.getElementById('userAvatar');
+        const uploadBtn = document.querySelector('#avatarUploadBtn');
+        let originalBtnHTML = '';
+
+        if (!file) return;
+
+        // Store original button HTML for restoring later
+        if (uploadBtn) {
+            originalBtnHTML = uploadBtn.innerHTML;
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        }
+
         try {
-            const fileInput = event.target;
-            const file = fileInput.files[0];
-            const userAvatar = document.getElementById('userAvatar');
-            const uploadBtn = document.getElementById('uploadBtn');
-
-            if (!file) return;
-
             // Validate file type
             const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
             if (!validTypes.includes(file.type)) {
-                this.showNotification('Please upload a valid image file (JPEG, PNG, or GIF)', 'error');
-                return;
+                throw new Error('Please upload a valid image file (JPEG, PNG, or GIF)');
             }
 
             // Validate file size (max 10MB)
             const maxSize = 10 * 1024 * 1024; // 10MB
             if (file.size > maxSize) {
-                this.showNotification('Image size should be less than 10MB', 'error');
-                return;
+                throw new Error('Image size should be less than 10MB');
             }
 
             const formData = new FormData();
             formData.append('avatar', file);
-
-            // Show loading state
-            if (uploadBtn) {
-                uploadBtn.disabled = true;
-                uploadBtn.textContent = 'Uploading...';
-            }
 
             // Show preview
             const reader = new FileReader();
@@ -294,7 +294,11 @@ class ProfileManager {
 
             // Upload to server
             const token = localStorage.getItem('token');
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/me/avatar`, {
+            if (!token) {
+                throw new Error('You must be logged in to upload an avatar');
+            }
+
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/upload-avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -304,8 +308,9 @@ class ProfileManager {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to upload avatar. The server returned an error.');
+                throw new Error(errorData.message || 'Failed to upload avatar. Please try again.');
             }
+
 
             // Get the response as blob first
             const blob = await response.blob();
@@ -388,10 +393,10 @@ class ProfileManager {
             }
         } finally {
             // Reset the file input and button state
-            event.target.value = '';
+            if (fileInput) fileInput.value = '';
             if (uploadBtn) {
                 uploadBtn.disabled = false;
-                uploadBtn.innerHTML = originalHTML;
+                uploadBtn.innerHTML = originalBtnHTML || 'Change Avatar';
             }
         }
     }
