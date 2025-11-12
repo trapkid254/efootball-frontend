@@ -298,7 +298,7 @@ class ProfileManager {
                 throw new Error('You must be logged in to upload an avatar');
             }
 
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/upload-avatar`, {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/avatar`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
