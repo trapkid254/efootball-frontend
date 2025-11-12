@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - TONA KIKWETU</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/profile.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="dark-theme">
@@ -36,11 +37,15 @@
                 <div class="profile-avatar-section">
                     <div class="avatar-container">
                         <div class="user-avatar large" id="userAvatar">U</div>
-                        <button class="avatar-upload-btn" id="avatarUploadBtn">
-                            <i class="fas fa-camera"></i>
-                        </button>
+                        <div class="avatar-upload-wrapper">
+                            <button type="button" class="avatar-upload-btn" id="avatarUploadBtn" title="Change profile picture">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <div class="avatar-upload-hint">Click to upload</div>
+                            <div class="avatar-upload-requirements">JPG, PNG, or GIF (max 2MB)</div>
+                        </div>
                     </div>
-                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                    <input type="file" id="avatarInput" accept="image/jpeg, image/png, image/gif" style="display: none;">
                 </div>
                 <div class="profile-info">
                     <h1 id="userDisplayName">Player Name</h1>
@@ -48,20 +53,20 @@
                     <p class="user-whatsapp" id="userWhatsApp">WhatsApp: </p>
                     <div class="profile-stats">
                         <div class="stat">
-                            <h3 id="totalWins">0</h3>
-                            <span>Wins</span>
+                            <span class="stat-value" id="matchesPlayed">0</span>
+                            <span class="stat-label">Matches</span>
                         </div>
                         <div class="stat">
-                            <h3 id="totalMatches">0</h3>
-                            <span>Matches</span>
+                            <span class="stat-value" id="wins">0</span>
+                            <span class="stat-label">Wins</span>
                         </div>
                         <div class="stat">
-                            <h3 id="winRate">0%</h3>
-                            <span>Win Rate</span>
+                            <span class="stat-value" id="losses">0</span>
+                            <span class="stat-label">Losses</span>
                         </div>
                         <div class="stat">
-                            <h3 id="playerRank">-</h3>
-                            <span>Rank</span>
+                            <span class="stat-value" id="winRate">0%</span>
+                            <span class="stat-label">Win Rate</span>
                         </div>
                     </div>
                 </div>
@@ -82,25 +87,17 @@
             <!-- Edit Profile Tab -->
             <div class="tab-content active" id="edit-tab">
                 <div class="profile-card">
-                    <h2>Profile Information</h2>
+                    <h2>Edit Profile</h2>
                     <form id="profileForm">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="displayName">Display Name</label>
-                                <input type="text" id="displayName" name="displayName" placeholder="Enter your display name">
-                            </div>
-                            <div class="form-group">
-                                <label for="location">Location</label>
-                                <input type="text" id="location" name="location" placeholder="e.g., Nairobi, Kenya">
-                            </div>
+                        <div class="form-group">
+                            <label for="efootballId">Efootball ID</label>
+                            <input type="text" id="efootballId" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label for="bio">Bio</label>
-                            <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself and your gaming experience..."></textarea>
+                            <label for="whatsapp">WhatsApp Number</label>
+                            <input type="tel" id="whatsapp" class="form-control" required>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Save Changes</button>
-                        </div>
+                        <button type="submit" class="btn">Save Changes</button>
                     </form>
                 </div>
             </div>
