@@ -325,24 +325,33 @@ class ProfileManager {
 
             // Get the response as JSON
             const result = await response.json();
+            console.log('Avatar upload response:', result);
             
             if (result.avatarUrl) {
-                // Use the avatar URL from the server
-                const serverAvatarUrl = result.avatarUrl.startsWith('http')
-                    ? result.avatarUrl
-                    : `${window.API_BASE_URL || ''}${result.avatarUrl.startsWith('/') ? '' : '/'}${result.avatarUrl}`;
+                // Ensure the avatar URL is complete
+                let serverAvatarUrl = result.avatarUrl;
+                
+                // If it's a relative URL, prepend the API base URL
+                if (!serverAvatarUrl.startsWith('http') && !serverAvatarUrl.startsWith('data:')) {
+                    serverAvatarUrl = `${window.API_BASE_URL || ''}${serverAvatarUrl.startsWith('/') ? '' : '/'}${serverAvatarUrl}`;
+                }
                 
                 // Update the current user data
-                this.currentUser.avatarUrl = serverAvatarUrl;
+                this.currentUser.avatar = result.avatar; // Save the filename
+                this.currentUser.avatarUrl = serverAvatarUrl; // Save the full URL
                 
                 // Update the UI with the new avatar
                 if (userAvatar) {
-                    this.setAvatarImage(userAvatar, serverAvatarUrl);
+                    // Add cache-busting parameter
+                    const separator = serverAvatarUrl.includes('?') ? '&' : '?';
+                    const urlWithCacheBust = `${serverAvatarUrl}${separator}t=${Date.now()}`;
+                    this.setAvatarImage(userAvatar, urlWithCacheBust);
                 }
                 
-                // Update local storage
+                // Update local storage with both the filename and full URL
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
-                user.avatarUrl = serverAvatarUrl;
+                user.avatar = this.currentUser.avatar;
+                user.avatarUrl = this.currentUser.avatarUrl;
                 localStorage.setItem('user', JSON.stringify(user));
                 
                 this.showNotification('✅ Profile picture updated successfully!', 'success');
@@ -377,40 +386,39 @@ class ProfileManager {
         const userAvatar = document.getElementById('userAvatar');
         if (!userAvatar) return;
         
-        // First, try to use the server URL if available
-        if (this.currentUser?.avatarUrl) {
-            // Add cache-busting parameter to prevent caching issues
-            const separator = this.currentUser.avatarUrl.includes('?') ? '&' : '?';
-            const avatarUrl = `${this.currentUser.avatarUrl}${separator}t=${new Date().getTime()}`;
+        // Check if we have a cached avatar URL in local storage
+        const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // If we have a cached avatar URL, use it
+        if (cachedUser?.avatarUrl) {
+            const separator = cachedUser.avatarUrl.includes('?') ? '&' : '?';
+            const avatarUrl = `${cachedUser.avatarUrl}${separator}t=${Date.now()}`;
             
-            try {
-                // Try to load the avatar with CORS
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                
-                await new Promise((resolve, reject) => {
-                    const timer = setTimeout(() => {
-                        img.onload = null;
-                        img.onerror = null;
-                        reject(new Error('Image load timeout'));
-                    }, 5000);
-                    
-                    img.onload = () => {
-                        clearTimeout(timer);
-                        resolve();
-                    };
-                    
-                    img.onerror = () => {
-                        clearTimeout(timer);
-                        reject(new Error('Failed to load image'));
-                    };
-                    
-                    img.src = avatarUrl;
-                });
-                
-                // If we get here, the image loaded successfully
+            // Try to load the avatar with a timeout
+            const loaded = await this.loadImageWithTimeout(avatarUrl);
+            if (loaded) {
                 this.setAvatarImage(userAvatar, avatarUrl);
                 return;
+            }
+        }
+        
+        // If no cached URL or it failed to load, try the current user's avatar
+        if (this.currentUser?.avatarUrl) {
+            const separator = this.currentUser.avatarUrl.includes('?') ? '&' : '?';
+            const avatarUrl = `${this.currentUser.avatarUrl}${separator}t=${Date.now()}`;
+            
+            try {
+                const loaded = await this.loadImageWithTimeout(avatarUrl);
+                if (loaded) {
+                    this.setAvatarImage(userAvatar, avatarUrl);
+                    
+                    // Update local storage with the working URL
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    user.avatarUrl = this.currentUser.avatarUrl;
+                    localStorage.setItem('user', JSON.stringify(user));
+                    
+                    return;
+                }
                 
             } catch (error) {
                 console.log('Could not load avatar from server URL, trying fallback', error);
@@ -507,6 +515,37 @@ class ProfileManager {
                 img.onerror = function() { resolve(null); };
                 img.src = url;
             }
+        });
+    }
+    
+    // Helper method to load an image with a timeout
+    async loadImageWithTimeout(url, timeout = 5000) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            const timer = setTimeout(() => {
+                img.onload = null;
+                img.onerror = null;
+                console.log('Image load timeout:', url);
+                resolve(false);
+            }, timeout);
+            
+            img.onload = () => {
+                clearTimeout(timer);
+                console.log('Image loaded successfully:', url);
+                resolve(true);
+            };
+            
+            img.onerror = (e) => {
+                clearTimeout(timer);
+                console.error('Error loading image:', url, e);
+                resolve(false);
+            };
+            
+            // Add cache-busting parameter
+            const separator = url.includes('?') ? '&' : '?';
+            img.src = `${url}${separator}t=${Date.now()}`;
         });
     }
     
