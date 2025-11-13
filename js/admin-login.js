@@ -74,26 +74,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Determine API base URL
                 const apiBase = window.API_BASE_URL || '';
+                const apiUrl = `${apiBase}/api/auth/login`;
+                
+                console.log('Making request to:', apiUrl);
+                console.log('Request body:', body);
                 
                 // Make the API request
                 let response;
                 try {
-                    console.log('Sending login request to:', `${apiBase}/api/auth/login`);
-                    response = await fetch(`${apiBase}/api/auth/login`, {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                    
+                    response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 
                             'Content-Type': 'application/json',
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify(body),
-                        credentials: 'include' // Important for cookies/sessions
+                        credentials: 'include',
+                        signal: controller.signal
                     });
                     
-                    console.log('Login response status:', response.status);
+                    clearTimeout(timeoutId);
                     
-                } catch (networkError) {
-                    console.error('Network error:', networkError);
-                    throw new Error('Unable to connect to the server. Please check your internet connection.');
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', Object.fromEntries([...response.headers.entries()]));
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Server responded with error:', errorText);
+                        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                    }
+                    
+                } catch (error) {
+                    console.error('Request failed:', error);
+                    if (error.name === 'AbortError') {
+                        throw new Error('Request timed out. Please check your internet connection.');
+                    } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        throw new Error('Cannot connect to the server. Please check your internet connection.');
+                    }
+                    throw error;
                 }
 
                 // Handle response
