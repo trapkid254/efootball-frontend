@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (devFill) {
         devFill.addEventListener('click', function (e) {
             e.preventDefault();
-            document.getElementById('identifier').value = '12345';
+            document.getElementById('identifier').value = '254714003218';
             document.getElementById('password').value = '#Okwonkwo254';
             passwordInput.focus();
         });
@@ -31,8 +31,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Auto-fill on page load for testing (remove in production)
     document.addEventListener('DOMContentLoaded', () => {
-        if (window.location.href.includes('localhost') || window.location.href.includes('127.0.0.1')) {
-            document.getElementById('identifier').value = '12345';
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            document.getElementById('identifier').value = '254714003218';
             document.getElementById('password').value = '#Okwonkwo254';
         }
     });
@@ -62,13 +62,33 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             try {
+                // Format the identifier if it's a phone number
+                let formattedIdentifier = identifier;
+                if (/^0\d{9}$/.test(identifier)) {
+                    // Convert local format (0714003218) to international (254714003218)
+                    formattedIdentifier = '254' + identifier.substring(1);
+                } else if (/^7\d{8}$/.test(identifier)) {
+                    // If number starts with 7 (missing leading 0), add 254
+                    formattedIdentifier = '254' + identifier;
+                }
+
                 // Determine if the identifier is a phone number or efootball ID
-                const isPhoneNumber = /^\d+$/.test(identifier);
+                const isPhoneNumber = /^\d+$/.test(formattedIdentifier);
+
+                // Validate phone number format if it's a phone number
+                if (isPhoneNumber && !/^254\d{9}$/.test(formattedIdentifier)) {
+                    showError('Please enter a valid phone number with country code (e.g., 254714003218)');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Sign in';
+                    }
+                    return;
+                }
                 
                 // Prepare request body with only the relevant field
                 const body = isPhoneNumber 
-                    ? { whatsapp: identifier, password }
-                    : { efootballId: identifier, password };
+                    ? { whatsapp: formattedIdentifier, password }
+                    : { efootballId: formattedIdentifier, password };
                 
                 console.log('Login attempt with:', body);
 
