@@ -377,7 +377,11 @@ class AdminPanel {
                 capacity: parseInt(formData.get('capacity') || '16', 10),
                 startDate: formData.get('startDate') || new Date().toISOString(),
                 description: formData.get('description')?.trim() || '',
-                rules: formData.get('rules')?.trim() || ''
+                rules: formData.get('rules')?.trim() || '',
+                organizer: this.currentUser?._id || '',
+                settings: {
+                    prizePool: parseFloat(formData.get('prizePool') || 0)
+                }
             };
 
             console.log('Submitting tournament data:', tournamentData);
@@ -388,6 +392,9 @@ class AdminPanel {
             }
             if (tournamentData.capacity < 2 || tournamentData.capacity > 128) {
                 throw new Error('Player capacity must be between 2 and 128');
+            }
+            if (!tournamentData.organizer) {
+                throw new Error('You must be logged in to create a tournament');
             }
 
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
