@@ -22,43 +22,81 @@ class AdminPanel {
     }
 
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+        
         // Theme toggle
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            this.toggleTheme();
-        });
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                console.log('Theme toggle clicked');
+                this.toggleTheme();
+            });
+        } else {
+            console.warn('Theme toggle button not found');
+        }
 
         // Logout button
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            this.logout();
-        });
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                console.log('Logout button clicked');
+                this.logout();
+            });
+        } else {
+            console.warn('Logout button not found');
+        }
 
         // Navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const href = link.getAttribute('href');
-                if (href && href.startsWith('#')) {
-                    this.handleNavigation(href.substring(1));
-                }
+        const navLinks = document.querySelectorAll('.nav-link');
+        if (navLinks.length > 0) {
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const href = link.getAttribute('href');
+                    console.log('Navigation link clicked:', href);
+                    if (href && href.startsWith('#')) {
+                        this.handleNavigation(href.substring(1));
+                    }
+                });
             });
-        });
+        } else {
+            console.warn('No navigation links found');
+        }
 
         // Create tournament form
         const createTournamentForm = document.getElementById('createTournamentForm');
         if (createTournamentForm) {
+            console.log('Found create tournament form');
             createTournamentForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                console.log('Tournament form submitted');
                 this.handleCreateTournament();
             });
+        } else {
+            console.warn('Create tournament form not found');
         }
         
         // Add click handler for create tournament button
         const createTournamentBtn = document.getElementById('createTournamentBtn');
         if (createTournamentBtn) {
+            console.log('Found create tournament button');
             createTournamentBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                console.log('Create tournament button clicked');
                 this.showCreateTournamentModal();
             });
+        } else {
+            console.error('Create tournament button not found!');
+            // Try to find the button again with a more permissive selector
+            const altButton = document.querySelector('[onclick*="createTournament"]');
+            if (altButton) {
+                console.log('Found alternative tournament button using different selector');
+                altButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Alternative create tournament button clicked');
+                    this.showCreateTournamentModal();
+                });
+            }
         }
     }
 
@@ -109,6 +147,33 @@ class AdminPanel {
 
     updateAdminInfo() {
         // Update admin-specific UI elements if needed
+    }
+
+    showCreateTournamentModal() {
+        const modal = document.getElementById('createTournamentModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.classList.add('modal-open');
+            // Set minimum start date to current date/time
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert minutes to milliseconds
+            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+            document.getElementById('startDate').min = localISOTime;
+            
+            // Set focus on the first input field
+            const firstInput = modal.querySelector('input, select, textarea');
+            if (firstInput) firstInput.focus();
+        } else {
+            console.error('Create tournament modal not found');
+        }
+    }
+
+    hideCreateTournamentModal() {
+        const modal = document.getElementById('createTournamentModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
     }
 
     async loadAdminData() {
@@ -216,22 +281,62 @@ class AdminPanel {
     }
 
     showCreateTournamentModal() {
+        console.log('showCreateTournamentModal called');
         const modal = document.getElementById('createTournamentModal');
-        if (modal) {
-            // Add modal-open class to body to prevent scrolling
-            document.body.classList.add('modal-open');
-            // Show the modal with flex display for better centering
-            modal.style.display = 'flex';
-            modal.style.alignItems = 'flex-start';
-            modal.style.justifyContent = 'center';
-            
-            // Reset form
-            const form = document.getElementById('createTournamentForm');
+        
+        if (!modal) {
+            console.error('Tournament modal element not found!');
+            // Try to find the modal with a different selector
+            const altModal = document.querySelector('.modal');
+            if (altModal) {
+                console.log('Found modal using alternative selector');
+                altModal.style.display = 'block';
+                return;
+            }
+            return;
+        }
+        
+        console.log('Modal found, showing...');
+        
+        // Add modal-open class to body to prevent scrolling
+        document.body.classList.add('modal-open');
+        
+        // Make sure modal is visible and properly positioned
+        modal.style.display = 'block';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        modal.style.zIndex = '1000';
+        modal.style.overflowY = 'auto';
+        
+        // Style the modal content
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.margin = '20px auto';
+            modalContent.style.maxWidth = '800px';
+            modalContent.style.background = '#fff';
+            modalContent.style.padding = '20px';
+            modalContent.style.borderRadius = '8px';
+            modalContent.style.position = 'relative';
+        }
+        
+        console.log('Modal should be visible now');
+        
+        // Reset form
+        const form = document.getElementById('createTournamentForm');
+        if (form) {
+            form.reset();
             
             // Focus on the first input field
-            const firstInput = modal.querySelector('input, select, textarea');
+            const firstInput = form.querySelector('input, select, textarea');
             if (firstInput) {
-                setTimeout(() => firstInput.focus(), 100);
+                setTimeout(() => {
+                    firstInput.focus();
+                    console.log('Focused on first input:', firstInput);
+                }, 100);
             }
             if (form) form.reset();
             
@@ -522,6 +627,55 @@ function showPaymentManagement() {
 }
 
 // Initialize admin panel when page loads
+console.log('DOM fully loaded, initializing admin panel...');
 document.addEventListener('DOMContentLoaded', () => {
-    window.adminPanel = new AdminPanel();
+    try {
+        console.log('Creating new AdminPanel instance...');
+        window.adminPanel = new AdminPanel();
+        console.log('AdminPanel initialized successfully');
+        
+        // Direct event listener as a fallback
+        const createBtn = document.getElementById('createTournamentBtn');
+        if (createBtn) {
+            console.log('Adding direct click event to create button');
+            createBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Direct button click handler triggered');
+                const modal = document.getElementById('createTournamentModal');
+                if (modal) {
+                    console.log('Showing modal directly');
+                    modal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    console.error('Modal not found in direct handler');
+                }
+            });
+        } else {
+            console.error('Create button not found for direct event listener');
+        }
+    } catch (error) {
+        console.error('Error initializing admin panel:', error);
+    }
 });
+
+// Global function as a fallback
+function showCreateTournamentModal() {
+    console.log('Global showCreateTournamentModal called');
+    const modal = document.getElementById('createTournamentModal');
+    if (modal) {
+        console.log('Showing modal from global function');
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    } else {
+        console.error('Modal not found in global function');
+    }
+}
+
+function hideCreateTournamentModal() {
+    console.log('Hiding modal');
+    const modal = document.getElementById('createTournamentModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
