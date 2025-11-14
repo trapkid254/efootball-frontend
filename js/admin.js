@@ -353,7 +353,10 @@ class AdminPanel {
 
     async handleCreateTournament() {
         const tournamentForm = document.getElementById('createTournamentForm');
-        if (!tournamentForm) return;
+        if (!tournamentForm) {
+            console.error('Tournament form not found');
+            return;
+        }
 
         // Disable the submit button to prevent multiple submissions
         const submitBtn = tournamentForm.querySelector('button[type="submit"]');
@@ -364,17 +367,20 @@ class AdminPanel {
         }
 
         try {
+            // Get form data
             const formData = new FormData(tournamentForm);
             const tournamentData = {
-                name: formData.get('name').trim(),
-                format: formData.get('format'),
-                entryFee: parseFloat(formData.get('entryFee')) || 0,
-                prizePool: parseFloat(formData.get('prizePool')) || 0,
-                capacity: parseInt(formData.get('capacity'), 10) || 16,
-                startDate: formData.get('startDate'),
-                description: formData.get('description').trim(),
-                rules: formData.get('rules').trim()
+                name: formData.get('name')?.trim() || '',
+                format: formData.get('format') || 'knockout',
+                entryFee: parseFloat(formData.get('entryFee') || 0),
+                prizePool: parseFloat(formData.get('prizePool') || 0),
+                capacity: parseInt(formData.get('capacity') || '16', 10),
+                startDate: formData.get('startDate') || new Date().toISOString(),
+                description: formData.get('description')?.trim() || '',
+                rules: formData.get('rules')?.trim() || ''
             };
+
+            console.log('Submitting tournament data:', tournamentData);
 
             // Basic validation
             if (!tournamentData.name) {
@@ -385,25 +391,45 @@ class AdminPanel {
             }
 
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token') || '';
+            
+            console.log('Sending request to:', `${apiBase}/api/tournaments`);
             
             const response = await fetch(`${apiBase}/api/tournaments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
                 },
-                body: JSON.stringify(tournamentData)
+                body: JSON.stringify(tournamentData),
+                credentials: 'include' // Include cookies if needed
             });
 
-            const result = await response.json();
+            console.log('Response status:', response.status);
+            
+            let result;
+            try {
+                result = await response.json();
+                console.log('Response data:', result);
+            } catch (jsonError) {
+                console.error('Error parsing JSON response:', jsonError);
+                throw new Error('Invalid response from server');
+            }
 
             if (!response.ok) {
-                throw new Error(result.message || 'Failed to create tournament');
+                const errorMessage = result?.message || 
+                                  result?.error || 
+                                  `Server error: ${response.status} ${response.statusText}`;
+                console.error('Server error details:', result);
+                throw new Error(errorMessage);
             }
 
             this.showNotification('Tournament created successfully!', 'success');
             this.hideCreateTournamentModal();
+            
+            // Reset the form
+            tournamentForm.reset();
             
             // Reload the tournaments section if it's active
             if (window.location.hash === '#tournaments') {
@@ -415,7 +441,8 @@ class AdminPanel {
             
         } catch (error) {
             console.error('Error creating tournament:', error);
-            this.showNotification(error.message || 'Failed to create tournament', 'error');
+            const errorMessage = error.message || 'Failed to create tournament. Please try again.';
+            this.showNotification(errorMessage, 'error');
         } finally {
             // Re-enable the submit button
             if (submitBtn) {
