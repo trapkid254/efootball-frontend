@@ -402,7 +402,7 @@ class AdminPanel {
             
             // Get the current user's ID from the authentication token or user object
             const user = this.currentUser || JSON.parse(localStorage.getItem('user') || '{}');
-            const organizerId = user._id || user.id;
+            const organizerId = user._id || user.id || 'dev-admin';
             
             if (!organizerId) {
                 throw new Error('User not authenticated. Please log in again.');
@@ -418,7 +418,7 @@ class AdminPanel {
                 description: tournamentData.description,
                 format: tournamentData.format,
                 startDate: tournamentData.startDate,
-                // The organizer will be set by the server from req.user.id
+                organizer: organizerId,  // Include organizer ID in the request body
                 settings: {
                     prizePool: tournamentData.settings?.prizePool || 0,
                     capacity: tournamentData.settings?.capacity || 16,
@@ -435,9 +435,9 @@ class AdminPanel {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'x-user-id': organizerId  // Explicitly pass user ID in headers
+                    'Authorization': `Bearer ${token}`
                 },
+                credentials: 'include',  // Include credentials (cookies) with the request
                 body: JSON.stringify(requestBody)
             });
 
