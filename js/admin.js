@@ -36,7 +36,10 @@ class AdminPanel {
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.handleNavigation(e.target.getAttribute('href').substring(1));
+                const href = link.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    this.handleNavigation(href.substring(1));
+                }
             });
         });
 
