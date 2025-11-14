@@ -142,9 +142,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log('Response headers:', Object.fromEntries([...response.headers.entries()]));
                 
                     if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Server responded with error:', errorText);
-                        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                        const errorData = await response.json().catch(() => ({}));
+                        console.error('Server responded with error:', errorData);
+                        
+                        if (response.status === 401) {
+                            throw new Error(errorData.message || 'Invalid credentials. Please check your login details and try again.');
+                        }
+                        
+                        throw new Error(errorData.message || `Server error: ${response.status} ${response.statusText}`);
                     }
                     
                 } catch (error) {
