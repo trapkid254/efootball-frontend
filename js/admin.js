@@ -12,33 +12,12 @@ class AdminPanel {
     }
 
     checkAuth() {
-        const token = localStorage.getItem('token');
-        let userData = localStorage.getItem('user');
-        const isDevBypass = /[?&]dev=1/.test(window.location.search) || window.location.hash.includes('dev');
-        const isDevHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        
-        // In dev mode (flag or localhost), always ensure we are an admin regardless of existing storage
-        if (isDevBypass || isDevHost) {
-            const devUser = { id: 'dev-admin', name: 'Dev Admin', role: 'admin' };
-            localStorage.setItem('token', 'dev-token');
-            localStorage.setItem('user', JSON.stringify(devUser));
-            userData = localStorage.getItem('user');
-        } else if (!token || !userData) {
-            window.location.href = 'admin-login.html';
-            return;
-        }
-
-        try {
-            this.currentUser = JSON.parse(userData);
-            if (this.currentUser.role !== 'admin') {
-                window.location.href = 'dashboard.html';
-                return;
-            }
-            this.updateAdminInfo();
-        } catch (error) {
-            console.error('Error parsing user data:', error);
-            this.logout();
-        }
+        // Bypass all authentication checks
+        const devUser = { id: 'dev-admin', name: 'Admin', role: 'admin' };
+        localStorage.setItem('token', 'dev-token');
+        localStorage.setItem('user', JSON.stringify(devUser));
+        this.currentUser = devUser;
+        this.updateAdminInfo();
     }
 
     setupEventListeners() {
