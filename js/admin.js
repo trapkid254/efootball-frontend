@@ -9,6 +9,7 @@ class AdminPanel {
         this.setupEventListeners();
         this.loadAdminData();
         this.setupModals();
+        this.setupResponsiveMenu();
     }
 
     checkAuth() {
@@ -258,6 +259,44 @@ class AdminPanel {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = 'index.html';
+    }
+
+    setupResponsiveMenu() {
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('navMenu');
+        
+        if (hamburger && navMenu) {
+            // Toggle menu on hamburger click
+            hamburger.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+                hamburger.innerHTML = navMenu.classList.contains('active') ? 
+                    '<i class="fas fa-times"></i>' : 
+                    '<i class="fas fa-bars"></i>';
+            });
+
+            // Close menu when clicking on a nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 992) {
+                        navMenu.classList.remove('active');
+                        hamburger.innerHTML = '<i class="fas fa-bars"></i>';
+                    }
+                });
+            });
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const isClickInside = navMenu.contains(e.target) || 
+                               hamburger.contains(e.target);
+            
+            if (!isClickInside && navMenu.classList.contains('active')) {
+                navMenu.classList.remove('active');
+                if (hamburger) {
+                    hamburger.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            }
+        });
     }
 
     showNotification(message, type = 'info') {
