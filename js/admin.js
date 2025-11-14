@@ -195,7 +195,71 @@ class AdminPanel {
     }
 
     showCreateTournamentModal() {
-        document.getElementById('createTournamentModal').style.display = 'block';
+        const modal = document.getElementById('createTournamentModal');
+        if (modal) {
+            modal.style.display = 'block';
+            // Reset form
+            const form = document.getElementById('createTournamentForm');
+            if (form) form.reset();
+            // Set default start date to now + 1 hour
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            const startDateInput = document.getElementById('startDate');
+            if (startDateInput) {
+                startDateInput.min = now.toISOString().slice(0, 16);
+                startDateInput.value = now.toISOString().slice(0, 16);
+            }
+        }
+    }
+
+    async handleCreateTournament() {
+        const form = document.getElementById('createTournamentForm');
+        if (!form) return;
+
+        const formData = new FormData(form);
+        const tournamentData = {
+            name: formData.get('name'),
+            format: formData.get('format'),
+            entryFee: parseFloat(formData.get('entryFee')) || 0,
+            prizePool: parseFloat(formData.get('prizePool')) || 0,
+            capacity: parseInt(formData.get('capacity'), 10) || 16,
+            startDate: formData.get('startDate'),
+            description: formData.get('description'),
+            rules: formData.get('rules')
+        };
+
+        try {
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            
+            const response = await fetch(`${apiBase}/api/tournaments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(tournamentData)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to create tournament');
+            }
+
+            this.showNotification('Tournament created successfully!', 'success');
+            this.hideCreateTournamentModal();
+            this.loadSectionData('tournaments');
+            this.loadAdminData(); // Refresh dashboard stats
+        } catch (error) {
+            console.error('Error creating tournament:', error);
+            this.showNotification(error.message || 'Failed to create tournament', 'error');
+        }
+    }
+
+    hideCreateTournamentModal() {
+        const modal = document.getElementById('createTournamentModal');
+        if (modal) modal.style.display = 'none';
     }
 
     hideCreateTournamentModal() {
@@ -360,13 +424,17 @@ class AdminPanel {
     }
 }
 
-// Global functions for modal handling
+// Global functions for modal handling (kept for backward compatibility)
 function showCreateTournamentModal() {
-    window.adminPanel.showCreateTournamentModal();
+    if (window.adminPanel) {
+        window.adminPanel.showCreateTournamentModal();
+    }
 }
 
 function hideCreateTournamentModal() {
-    window.adminPanel.hideCreateTournamentModal();
+    if (window.adminPanel) {
+        window.adminPanel.hideCreateTournamentModal();
+    }
 }
 
 function showManagePlayers() {
