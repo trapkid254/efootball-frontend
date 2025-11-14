@@ -146,17 +146,32 @@ class AdminPanel {
     }
 
     handleNavigation(section) {
+        if (!section) return;
+        
         // Update active nav link
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
         });
-        document.querySelector(`[href="#${section}"]`).classList.add('active');
+        
+        const activeLink = document.querySelector(`[href="#${section}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
 
         // Show corresponding section
-        document.querySelectorAll('.admin-section').forEach(section => {
-            section.style.display = 'none';
-        });
-        document.getElementById(section).style.display = 'block';
+        const sections = document.querySelectorAll('.admin-section');
+        if (sections.length > 0) {
+            sections.forEach(sectionEl => {
+                if (sectionEl.style) {
+                    sectionEl.style.display = 'none';
+                }
+            });
+            
+            const targetSection = document.getElementById(section);
+            if (targetSection && targetSection.style) {
+                targetSection.style.display = 'block';
+            }
+        }
 
         // Load section-specific data
         this.loadSectionData(section);
