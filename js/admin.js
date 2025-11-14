@@ -399,22 +399,31 @@ class AdminPanel {
 
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token') || '';
-            const organizerId = this.currentUser?._id || '65d5f7a9f8d1b8a9f8d1b8a9';
+            
+            // Get the current user's ID from the authentication token or user object
+            const organizerId = this.currentUser?.id || JSON.parse(localStorage.getItem('user'))?.id;
+            
+            if (!organizerId) {
+                throw new Error('User not authenticated. Please log in again.');
+            }
             
             console.log('Sending request to:', `${apiBase}/api/tournaments`);
             
-            // Add organizer ID to the request body with proper ObjectId format
-            tournamentData.organizer = organizerId;
-            
-            // Create a clean request body with only the fields the server expects
+            // Create a clean request body with the required fields
             const requestBody = {
-                ...tournamentData,
-                organizer: organizerId,
+                name: tournamentData.name,
+                description: tournamentData.description,
+                game: tournamentData.game,
+                platform: tournamentData.platform,
+                startDate: tournamentData.startDate,
+                endDate: tournamentData.endDate,
+                organizer: organizerId,  // This will be used by the server
+                status: 'upcoming',
                 settings: {
-                    prizePool: tournamentData.settings.prizePool,
-                    capacity: tournamentData.settings.capacity,
-                    entryFee: tournamentData.entryFee,
-                    rules: tournamentData.rules
+                    prizePool: tournamentData.settings?.prizePool || 0,
+                    capacity: tournamentData.settings?.capacity || 16,
+                    entryFee: tournamentData.entryFee || 0,
+                    rules: tournamentData.rules || ''
                 }
             };
             
@@ -422,7 +431,8 @@ class AdminPanel {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(requestBody)
             });
