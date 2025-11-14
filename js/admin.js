@@ -378,7 +378,7 @@ class AdminPanel {
                 startDate: formData.get('startDate') || new Date().toISOString(),
                 description: formData.get('description')?.trim() || '',
                 rules: formData.get('rules')?.trim() || '',
-                organizer: this.currentUser?._id || '65d5f7a9f8d1b8a9f8d1b8a9', // Simple ObjectId string
+                // Organizer will be set in the fetch call
                 settings: {
                     prizePool: parseFloat(formData.get('prizePool') || 0),
                     capacity: parseInt(formData.get('capacity') || '16', 10)
@@ -399,15 +399,20 @@ class AdminPanel {
 
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token') || '';
+            const organizerId = this.currentUser?._id || '65d5f7a9f8d1b8a9f8d1b8a9';
             
             console.log('Sending request to:', `${apiBase}/api/tournaments`);
+            
+            // Add organizer ID to the request body
+            tournamentData.organizer = organizerId;
             
             const response = await fetch(`${apiBase}/api/tournaments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'x-user-id': organizerId // Add user ID in header as fallback
                 },
                 body: JSON.stringify(tournamentData),
                 credentials: 'include' // Include cookies if needed
