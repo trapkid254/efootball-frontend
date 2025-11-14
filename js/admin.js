@@ -150,45 +150,76 @@ class AdminPanel {
     }
 
     showCreateTournamentModal() {
+        console.log('showCreateTournamentModal called');
         const modal = document.getElementById('createTournamentModal');
-        if (modal) {
-            // Force show the modal with inline styles
-            modal.style.display = 'flex';
-            modal.style.opacity = '1';
-            modal.style.visibility = 'visible';
+        
+        if (!modal) {
+            console.error('Modal not found');
+            return;
+        }
+        
+        console.log('Modal found, showing...');
+        
+        // Add modal-open class to body to prevent scrolling
+        document.body.classList.add('modal-open');
+        
+        // Make sure modal is visible and properly positioned
+        modal.style.display = 'block';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        modal.style.zIndex = '1000';
+        modal.style.overflowY = 'auto';
+        
+        // Style the modal content
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.margin = '20px auto';
+            modalContent.style.maxWidth = '800px';
+            modalContent.style.background = '#fff';
+            modalContent.style.padding = '20px';
+            modalContent.style.borderRadius = '8px';
+            modalContent.style.position = 'relative';
+        }
+        
+        console.log('Modal should be visible now');
+        
+        // Reset form
+        const tournamentForm = document.getElementById('createTournamentForm');
+        if (tournamentForm) {
+            tournamentForm.reset();
             
-            document.body.classList.add('modal-open');
-            
-            // Set minimum start date to current date/time
-            const now = new Date();
-            const timezoneOffset = now.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
-            
-            const startDateInput = document.getElementById('startDate');
-            if (startDateInput) {
-                startDateInput.min = localISOTime;
+            // Focus on the first input field
+            const firstInput = tournamentForm.querySelector('input, select, textarea');
+            if (firstInput) {
+                setTimeout(() => {
+                    firstInput.focus();
+                }, 100);
             }
-            
-            // Make sure the modal content is visible
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.style.opacity = '1';
-                modalContent.style.visibility = 'visible';
-                modalContent.style.transform = 'none';
-            }
-            
-            // Set focus on the first input field
-            const firstInput = modal.querySelector('input, select, textarea');
-            if (firstInput) firstInput.focus();
-            
-            // Close modal when clicking the close button
-            const closeBtn = modal.querySelector('.close');
-            if (closeBtn) {
-                closeBtn.onclick = (e) => {
+        }
+        // Show the modal
+        modal.style.display = 'flex';
+        
+        // Set minimum start date to current date/time
+        const now = new Date();
+        const timezoneOffset = now.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+        
+        const startDateInput = document.getElementById('startDate');
+        if (startDateInput) {
+            startDateInput.min = localISOTime;
+        }
+        
+        // Set up close button
+        const closeBtn = modal.querySelector('.close');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
                     e.preventDefault();
                     this.hideCreateTournamentModal();
                 };
-            }
             
             // Close modal when clicking outside the modal content
             modal.onclick = (e) => {
@@ -212,28 +243,10 @@ class AdminPanel {
     }
 
     hideCreateTournamentModal() {
+        console.log('Hiding tournament modal');
         const modal = document.getElementById('createTournamentModal');
         if (modal) {
-            // Hide the modal
             modal.style.display = 'none';
-            modal.style.opacity = '0';
-            modal.style.visibility = 'hidden';
-            
-            document.body.classList.remove('modal-open');
-            
-            // Reset modal content styles
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.style.opacity = '0';
-                modalContent.style.visibility = 'hidden';
-            }
-            
-            // Clean up event listeners
-            const closeBtn = modal.querySelector('.close');
-            if (closeBtn) {
-                closeBtn.onclick = null;
-            }
-            modal.onclick = null;
         }
     }
 
@@ -341,89 +354,12 @@ class AdminPanel {
         }
     }
 
-    showCreateTournamentModal() {
-        console.log('showCreateTournamentModal called');
-        const modal = document.getElementById('createTournamentModal');
-        
-        if (!modal) {
-            console.error('Tournament modal element not found!');
-            // Try to find the modal with a different selector
-            const altModal = document.querySelector('.modal');
-            if (altModal) {
-                console.log('Found modal using alternative selector');
-                altModal.style.display = 'block';
-                return;
-            }
-            return;
-        }
-        
-        console.log('Modal found, showing...');
-        
-        // Add modal-open class to body to prevent scrolling
-        document.body.classList.add('modal-open');
-        
-        // Make sure modal is visible and properly positioned
-        modal.style.display = 'block';
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        modal.style.zIndex = '1000';
-        modal.style.overflowY = 'auto';
-        
-        // Style the modal content
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.style.margin = '20px auto';
-            modalContent.style.maxWidth = '800px';
-            modalContent.style.background = '#fff';
-            modalContent.style.padding = '20px';
-            modalContent.style.borderRadius = '8px';
-            modalContent.style.position = 'relative';
-        }
-        
-        console.log('Modal should be visible now');
-        
-        // Reset form
-        const form = document.getElementById('createTournamentForm');
-        if (form) {
-            form.reset();
-            
-            // Focus on the first input field
-            const firstInput = form.querySelector('input, select, textarea');
-            if (firstInput) {
-                setTimeout(() => {
-                    firstInput.focus();
-                    console.log('Focused on first input:', firstInput);
-                }, 100);
-            }
-            if (form) form.reset();
-            
-            // Set default start date to now + 1 hour
-            const now = new Date();
-            now.setHours(now.getHours() + 1);
-            const startDateInput = document.getElementById('startDate');
-            if (startDateInput) {
-                startDateInput.min = now.toISOString().slice(0, 16);
-                startDateInput.value = now.toISOString().slice(0, 16);
-            }
-            
-            // Set default capacity to 16
-            const capacityInput = document.getElementById('capacity');
-            if (capacityInput && !capacityInput.value) {
-                capacityInput.value = '16';
-            }
-        }
-    }
-
     async handleCreateTournament() {
-        const form = document.getElementById('createTournamentForm');
-        if (!form) return;
+        const tournamentForm = document.getElementById('createTournamentForm');
+        if (!tournamentForm) return;
 
         // Disable the submit button to prevent multiple submissions
-        const submitBtn = form.querySelector('button[type="submit"]');
+        const submitBtn = tournamentForm.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -431,7 +367,7 @@ class AdminPanel {
         }
 
         try {
-            const formData = new FormData(form);
+            const formData = new FormData(tournamentForm);
             const tournamentData = {
                 name: formData.get('name').trim(),
                 format: formData.get('format'),
@@ -492,51 +428,11 @@ class AdminPanel {
         }
     }
 
-    hideCreateTournamentModal() {
-        const modal = document.getElementById('createTournamentModal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto'; // Re-enable scrolling
-        }
-    }
-
-    hideCreateTournamentModal() {
-        document.getElementById('createTournamentModal').style.display = 'none';
-    }
-
-    async handleCreateTournament() {
-        const formData = new FormData(document.getElementById('createTournamentForm'));
-        const tournamentData = {
-            name: formData.get('name'),
-            format: formData.get('format'),
-            entryFee: parseInt(formData.get('entryFee')),
-            prizePool: parseInt(formData.get('prizePool')),
-            capacity: parseInt(formData.get('capacity')),
-            startDate: formData.get('startDate'),
-            description: formData.get('description'),
-            rules: formData.get('rules')
-        };
-
-        try {
-            this.showLoading(true);
-            
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            this.hideCreateTournamentModal();
-            this.showNotification('Tournament created successfully!', 'success');
-            document.getElementById('createTournamentForm').reset();
-            
-            // Refresh tournaments list if on that section
-            if (document.querySelector('[href="#tournaments"]').classList.contains('active')) {
-                this.loadTournamentsManagement();
-            }
-            
-        } catch (error) {
-            console.error('Create tournament error:', error);
-            this.showNotification('Failed to create tournament', 'error');
-        } finally {
-            this.showLoading(false);
+    // Set default capacity to 16 when the page loads
+    setDefaultCapacity() {
+        const capacityInput = document.getElementById('capacity');
+        if (capacityInput && !capacityInput.value) {
+            capacityInput.value = '16';
         }
     }
 
@@ -660,21 +556,12 @@ class AdminPanel {
         };
         return icons[type] || 'info-circle';
     }
+
+
+
 }
 
 // Global functions for modal handling (kept for backward compatibility)
-function showCreateTournamentModal() {
-    if (window.adminPanel) {
-        window.adminPanel.showCreateTournamentModal();
-    }
-}
-
-function hideCreateTournamentModal() {
-    if (window.adminPanel) {
-        window.adminPanel.hideCreateTournamentModal();
-    }
-}
-
 function showManagePlayers() {
     window.adminPanel.showManagePlayers();
 }
@@ -718,25 +605,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Error initializing admin panel:', error);
     }
 });
-
-// Global function as a fallback
-function showCreateTournamentModal() {
-    console.log('Global showCreateTournamentModal called');
-    const modal = document.getElementById('createTournamentModal');
-    if (modal) {
-        console.log('Showing modal from global function');
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-    } else {
-        console.error('Modal not found in global function');
-    }
-}
-
-function hideCreateTournamentModal() {
-    console.log('Hiding modal');
-    const modal = document.getElementById('createTournamentModal');
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-}
