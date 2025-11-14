@@ -92,35 +92,55 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 console.log('Login attempt with:', body);
 
-                // Determine API base URL
-                const apiBase = window.API_BASE_URL || '';
+                // Determine API base URL - use the correct port (10001) that the server is running on
+                const apiBase = window.API_BASE_URL || 'http://localhost:10001';
                 const apiUrl = `${apiBase}/api/auth/login`;
                 
                 console.log('Making request to:', apiUrl);
-                console.log('Request body:', body);
+                console.log('Request body:', { ...body, password: '***' }); // Don't log actual password
                 
-                // Make the API request
+                // Make the API request with CORS and timeout handling
                 let response;
+                const controller = new AbortController();
+                const requestTimeout = 30000; // 30 seconds
+                const startTime = Date.now();
+                const timeoutId = setTimeout(() => {
+                    console.error(`Request timed out after ${requestTimeout/1000} seconds`);
+                    controller.abort();
+                }, requestTimeout);
+                
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                    console.log('Sending login request...');
                     
+                    // First, handle CORS preflight if needed
+                    const corsOptions = {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'content-type,authorization'
+                        }
+                    };
+                    
+                    // Make the actual request
                     response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 
                             'Content-Type': 'application/json',
-                            'Accept': 'application/json'
+                            'Accept': 'application/json',
+                            'Origin': window.location.origin
                         },
                         body: JSON.stringify(body),
                         credentials: 'include',
-                        signal: controller.signal
+                        signal: controller.signal,
+                        mode: 'cors'
                     });
                     
-                    clearTimeout(timeoutId);
-                    
+                    const responseTime = Date.now() - startTime;
+                    console.log(`Request completed in ${responseTime}ms`);
                     console.log('Response status:', response.status);
                     console.log('Response headers:', Object.fromEntries([...response.headers.entries()]));
-                    
+                
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error('Server responded with error:', errorText);
@@ -128,13 +148,37 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     
                 } catch (error) {
-                    console.error('Request failed:', error);
+                    const errorTime = Date.now() - startTime;
+                    const errorDetails = {
+                        name: error.name,
+                        message: error.message,
+                        type: error.constructor.name,
+                        timeElapsed: `${errorTime}ms`,
+                        url: apiUrl,
+                        method: 'POST',
+                        isAborted: error.name === 'AbortError',
+                        isNetworkError: error.message.includes('Failed to fetch'),
+                        stack: error.stack
+                    };
+                    
+                    console.error('Request failed with details:', errorDetails);
+                    
                     if (error.name === 'AbortError') {
-                        throw new Error('Request timed out. Please check your internet connection.');
+                        throw new Error(`Request timed out after ${errorTime}ms. The server is not responding. Please check:
+1. The server is running on port 10001
+2. There are no network issues
+3. The server allows requests from this origin: ${window.location.origin}`);
                     } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                        throw new Error('Cannot connect to the server. Please check your internet connection.');
+                        throw new Error(`Cannot connect to the server. Please check:
+1. The server is running at ${apiUrl}
+2. Your internet connection
+3. The server's CORS configuration allows requests from ${window.location.origin}`);
                     }
                     throw error;
+                } finally {
+                    // Clear the timeout if the request completes before the timeout
+                    clearTimeout(timeoutId);
+                    console.log('Request cleanup complete');
                 }
 
                 // Handle response
