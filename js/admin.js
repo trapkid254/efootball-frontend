@@ -40,10 +40,22 @@ class AdminPanel {
         });
 
         // Create tournament form
-        document.getElementById('createTournamentForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleCreateTournament();
-        });
+        const createTournamentForm = document.getElementById('createTournamentForm');
+        if (createTournamentForm) {
+            createTournamentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleCreateTournament();
+            });
+        }
+        
+        // Add click handler for create tournament button
+        const createTournamentBtn = document.querySelector('.btn-create-tournament');
+        if (createTournamentBtn) {
+            createTournamentBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('createTournamentModal').style.display = 'block';
+            });
+        }
     }
 
     setupModals() {
