@@ -403,19 +403,28 @@ class AdminPanel {
             
             console.log('Sending request to:', `${apiBase}/api/tournaments`);
             
-            // Add organizer ID to the request body
+            // Add organizer ID to the request body with proper ObjectId format
             tournamentData.organizer = organizerId;
+            
+            // Create a clean request body with only the fields the server expects
+            const requestBody = {
+                ...tournamentData,
+                organizer: organizerId,
+                settings: {
+                    prizePool: tournamentData.settings.prizePool,
+                    capacity: tournamentData.settings.capacity,
+                    entryFee: tournamentData.entryFee,
+                    rules: tournamentData.rules
+                }
+            };
             
             const response = await fetch(`${apiBase}/api/tournaments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
-                    'x-user-id': organizerId // Add user ID in header as fallback
+                    'Accept': 'application/json'
                 },
-                body: JSON.stringify(tournamentData),
-                credentials: 'include' // Include cookies if needed
+                body: JSON.stringify(requestBody)
             });
 
             console.log('Response status:', response.status);
