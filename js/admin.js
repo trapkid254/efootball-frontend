@@ -378,7 +378,7 @@ class AdminPanel {
                 startDate: formData.get('startDate') || new Date().toISOString(),
                 description: formData.get('description')?.trim() || '',
                 rules: formData.get('rules')?.trim() || '',
-                organizer: this.currentUser?._id || '',
+                organizer: this.currentUser?._id || 'default_organizer_id', // TODO: Replace with actual organizer ID later
                 settings: {
                     prizePool: parseFloat(formData.get('prizePool') || 0)
                 }
@@ -393,9 +393,8 @@ class AdminPanel {
             if (tournamentData.capacity < 2 || tournamentData.capacity > 128) {
                 throw new Error('Player capacity must be between 2 and 128');
             }
-            if (!tournamentData.organizer) {
-                throw new Error('You must be logged in to create a tournament');
-            }
+            // Temporarily removing login requirement for development
+            // Will be re-enabled when authentication is properly set up
 
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token') || '';
