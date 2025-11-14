@@ -483,6 +483,33 @@
     opacity: 0.5;
 }
 
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+    box-sizing: border-box;
+    /* Prevent horizontal shifting when modal opens */
+    overflow-x: hidden;
+    /* Smooth scrolling for the modal content */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent body from scrolling when modal is open */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
 /* Navbar Logo and Title Styling */
 .nav-logo {
     display: flex;

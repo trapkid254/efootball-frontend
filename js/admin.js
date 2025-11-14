@@ -66,7 +66,11 @@ class AdminPanel {
         // Close modals when clicking X
         document.querySelectorAll('.close').forEach(closeBtn => {
             closeBtn.addEventListener('click', (e) => {
-                e.target.closest('.modal').style.display = 'none';
+                const modal = e.target.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                }
             });
         });
 
@@ -74,6 +78,20 @@ class AdminPanel {
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 e.target.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                    }
+                });
             }
         });
     }
@@ -200,11 +218,21 @@ class AdminPanel {
     showCreateTournamentModal() {
         const modal = document.getElementById('createTournamentModal');
         if (modal) {
+            // Add modal-open class to body to prevent scrolling
+            document.body.classList.add('modal-open');
+            // Show the modal with flex display for better centering
             modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+            modal.style.alignItems = 'flex-start';
+            modal.style.justifyContent = 'center';
             
             // Reset form
             const form = document.getElementById('createTournamentForm');
+            
+            // Focus on the first input field
+            const firstInput = modal.querySelector('input, select, textarea');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
             if (form) form.reset();
             
             // Set default start date to now + 1 hour
