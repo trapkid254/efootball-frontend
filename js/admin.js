@@ -152,8 +152,10 @@ class AdminPanel {
     showCreateTournamentModal() {
         const modal = document.getElementById('createTournamentModal');
         if (modal) {
-            modal.style.display = 'flex';
+            // Add the 'active' class to show the modal
+            modal.classList.add('active');
             document.body.classList.add('modal-open');
+            
             // Set minimum start date to current date/time
             const now = new Date();
             const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert minutes to milliseconds
@@ -163,6 +165,19 @@ class AdminPanel {
             // Set focus on the first input field
             const firstInput = modal.querySelector('input, select, textarea');
             if (firstInput) firstInput.focus();
+            
+            // Close modal when clicking the close button
+            const closeBtn = modal.querySelector('.close');
+            if (closeBtn) {
+                closeBtn.onclick = () => this.hideCreateTournamentModal();
+            }
+            
+            // Close modal when clicking outside the modal content
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    this.hideCreateTournamentModal();
+                }
+            };
         } else {
             console.error('Create tournament modal not found');
         }
@@ -171,8 +186,9 @@ class AdminPanel {
     hideCreateTournamentModal() {
         const modal = document.getElementById('createTournamentModal');
         if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('active');
             document.body.classList.remove('modal-open');
+            modal.onclick = null; // Clean up event listener
         }
     }
 

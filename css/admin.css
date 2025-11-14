@@ -485,7 +485,7 @@
 
 /* Modal Styles */
 .modal {
-    display: none; /* Will be toggled to flex when active */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -497,25 +497,23 @@
     align-items: center;
     padding: 20px;
     box-sizing: border-box;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+    overflow-y: auto;
 }
 
 /* Modal content */
 .modal-content {
-    background: white !important;
-    padding: 30px !important;
-    border-radius: 8px !important;
-    width: 90% !important;
-    max-width: 600px !important;
-    max-height: 90vh !important;
-    overflow-y: auto !important;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
-    position: relative !important;
-    z-index: 2001 !important;
-    transform: translateY(0);
-    opacity: 1;
-    color: #333; /* Ensure text is visible */
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2001;
+    color: #333;
+    margin: 20px 0;
 }
 
 /* Close button */
@@ -530,16 +528,14 @@
 }
 
 /* Make sure the modal is visible when active */
-.modal[style*="display: flex"] {
-    display: flex !important;
-    opacity: 1;
+.modal.active {
+    display: flex;
 }
 
 /* Prevent body from scrolling when modal is open */
 body.modal-open {
     overflow: hidden;
-    position: fixed;
-    width: 100%;
+    position: relative;
     height: 100%;
 }
 
