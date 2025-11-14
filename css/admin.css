@@ -508,14 +508,16 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.7);
-    z-index: 9999;
+    background-color: rgba(0,0,0,0.8);
+    z-index: 10000;
     justify-content: center;
     align-items: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
 }
 
 #createTournamentModal > div {
-    background: #fff;
+    background: #ffffff;
     padding: 30px;
     border-radius: 8px;
     width: 90%;
@@ -523,8 +525,13 @@
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    z-index: 10000;
-    color: #333;
+    z-index: 10001;
+    color: #333333;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 #createTournamentModal h2 {

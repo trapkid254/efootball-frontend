@@ -200,8 +200,6 @@ class AdminPanel {
                 }, 100);
             }
         }
-        // Show the modal
-        modal.style.display = 'flex';
         
         // Set minimum start date to current date/time
         const now = new Date();
@@ -217,24 +215,23 @@ class AdminPanel {
         const closeBtn = modal.querySelector('.close');
         if (closeBtn) {
             closeBtn.onclick = (e) => {
-                    e.preventDefault();
-                    this.hideCreateTournamentModal();
-                };
+                e.preventDefault();
+                this.hideCreateTournamentModal();
+            };
             
             // Close modal when clicking outside the modal content
-            modal.onclick = (e) => {
+            modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     this.hideCreateTournamentModal();
                 }
-            };
+            });
             
-            // Prevent form submission for now
+            // Set up form submission
             const form = document.getElementById('createTournamentForm');
             if (form) {
                 form.onsubmit = (e) => {
                     e.preventDefault();
-                    console.log('Form would be submitted here');
-                    // Handle form submission here
+                    this.handleCreateTournament();
                 };
             }
         } else {
