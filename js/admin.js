@@ -200,10 +200,13 @@ class AdminPanel {
     showCreateTournamentModal() {
         const modal = document.getElementById('createTournamentModal');
         if (modal) {
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+            
             // Reset form
             const form = document.getElementById('createTournamentForm');
             if (form) form.reset();
+            
             // Set default start date to now + 1 hour
             const now = new Date();
             now.setHours(now.getHours() + 1);
@@ -212,6 +215,10 @@ class AdminPanel {
                 startDateInput.min = now.toISOString().slice(0, 16);
                 startDateInput.value = now.toISOString().slice(0, 16);
             }
+            
+            // Set focus to the first input field
+            const firstInput = form?.querySelector('input, select, textarea');
+            if (firstInput) firstInput.focus();
         }
     }
 
@@ -219,19 +226,35 @@ class AdminPanel {
         const form = document.getElementById('createTournamentForm');
         if (!form) return;
 
-        const formData = new FormData(form);
-        const tournamentData = {
-            name: formData.get('name'),
-            format: formData.get('format'),
-            entryFee: parseFloat(formData.get('entryFee')) || 0,
-            prizePool: parseFloat(formData.get('prizePool')) || 0,
-            capacity: parseInt(formData.get('capacity'), 10) || 16,
-            startDate: formData.get('startDate'),
-            description: formData.get('description'),
-            rules: formData.get('rules')
-        };
+        // Disable form during submission
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton?.innerHTML;
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        }
 
         try {
+            const formData = new FormData(form);
+            const tournamentData = {
+                name: formData.get('name'),
+                format: formData.get('format'),
+                entryFee: parseFloat(formData.get('entryFee')) || 0,
+                prizePool: parseFloat(formData.get('prizePool')) || 0,
+                capacity: parseInt(formData.get('capacity'), 10) || 16,
+                startDate: formData.get('startDate'),
+                description: formData.get('description'),
+                rules: formData.get('rules') || ''
+            };
+
+            // Basic validation
+            if (!tournamentData.name) {
+                throw new Error('Tournament name is required');
+            }
+            if (tournamentData.capacity < 2) {
+                throw new Error('Capacity must be at least 2 players');
+            }
+
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token');
             
@@ -252,17 +275,33 @@ class AdminPanel {
 
             this.showNotification('Tournament created successfully!', 'success');
             this.hideCreateTournamentModal();
-            this.loadSectionData('tournaments');
-            this.loadAdminData(); // Refresh dashboard stats
+            
+            // Refresh the tournaments list if we're on that page
+            if (window.location.hash === '#tournaments' || window.location.hash === '') {
+                this.loadSectionData('tournaments');
+            }
+            
+            // Refresh dashboard stats
+            this.loadAdminData();
+            
         } catch (error) {
             console.error('Error creating tournament:', error);
             this.showNotification(error.message || 'Failed to create tournament', 'error');
+        } finally {
+            // Re-enable the submit button
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
         }
     }
 
     hideCreateTournamentModal() {
         const modal = document.getElementById('createTournamentModal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = ''; // Re-enable scrolling
+        }
     }
 
     hideCreateTournamentModal() {

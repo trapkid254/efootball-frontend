@@ -285,6 +285,8 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+    width: 90%;
+    margin: 2rem auto;
 }
 
 .modal-content.large h2 {
