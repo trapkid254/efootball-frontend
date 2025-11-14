@@ -53,7 +53,7 @@ class AdminPanel {
         }
         
         // Add click handler for create tournament button
-        const createTournamentBtn = document.querySelector('.admin-btn.primary');
+        const createTournamentBtn = document.getElementById('createTournamentBtn');
         if (createTournamentBtn) {
             createTournamentBtn.addEventListener('click', (e) => {
                 e.preventDefault();

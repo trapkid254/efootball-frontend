@@ -482,3 +482,66 @@
     margin-bottom: 1rem;
     opacity: 0.5;
 }
+
+/* Navbar Logo and Title Styling */
+.nav-logo {
+    display: flex;
+    align-items: center;
+    max-width: 80%;
+    overflow: hidden;
+}
+
+.site-logo {
+    height: 40px;
+    width: auto;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.site-title {
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.admin-text {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-left: 5px;
+}
+
+@media (max-width: 768px) {
+    .nav-logo {
+        max-width: 70%;
+    }
+    
+    .site-title {
+        font-size: 1rem;
+    }
+    
+    .admin-text {
+        font-size: 0.8rem;
+    }
+    
+    .site-logo {
+        height: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-logo {
+        max-width: 60%;
+    }
+    
+    .site-title {
+        font-size: 0.9rem;
+    }
+    
+    .admin-text {
+        display: none;
+    }
+}
