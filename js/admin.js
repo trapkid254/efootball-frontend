@@ -14,7 +14,7 @@ class AdminPanel {
 
     checkAuth() {
         // Bypass all authentication checks
-        const devUser = { id: 'dev-admin', name: 'Admin', role: 'admin' };
+        const devUser = { _id: 'dev-admin', name: 'Admin', role: 'admin' };
         localStorage.setItem('token', 'dev-token');
         localStorage.setItem('user', JSON.stringify(devUser));
         this.currentUser = devUser;
@@ -413,10 +413,8 @@ class AdminPanel {
             const requestBody = {
                 name: tournamentData.name,
                 description: tournamentData.description,
-                game: tournamentData.game,
-                platform: tournamentData.platform,
+                format: tournamentData.format,
                 startDate: tournamentData.startDate,
-                endDate: tournamentData.endDate,
                 organizer: organizerId,  // This will be used by the server
                 status: 'upcoming',
                 settings: {
