@@ -378,11 +378,7 @@ class AdminPanel {
                 startDate: formData.get('startDate') || new Date().toISOString(),
                 description: formData.get('description')?.trim() || '',
                 rules: formData.get('rules')?.trim() || '',
-                organizer: {
-                    _id: this.currentUser?._id || '65d5f7a9f8d1b8a9f8d1b8a9',
-                    username: this.currentUser?.username || 'admin',
-                    email: this.currentUser?.email || 'admin@example.com'
-                },
+                organizer: this.currentUser?._id || '65d5f7a9f8d1b8a9f8d1b8a9', // Simple ObjectId string
                 settings: {
                     prizePool: parseFloat(formData.get('prizePool') || 0),
                     capacity: parseInt(formData.get('capacity') || '16', 10)
