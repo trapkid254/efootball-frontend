@@ -401,13 +401,16 @@ class AdminPanel {
             const token = localStorage.getItem('token') || '';
             
             // Get the current user's ID from the authentication token or user object
-            const organizerId = this.currentUser?._id || this.currentUser?.id || JSON.parse(localStorage.getItem('user') || '{}')?._id || JSON.parse(localStorage.getItem('user') || '{}')?.id || 'dev-admin';
+            const user = this.currentUser || JSON.parse(localStorage.getItem('user') || '{}');
+            const organizerId = user._id || user.id;
             
             if (!organizerId) {
                 throw new Error('User not authenticated. Please log in again.');
             }
             
             console.log('Sending request to:', `${apiBase}/api/tournaments`);
+            console.log('Current user:', user);
+            console.log('Using organizer ID:', organizerId);
             
             // Create a clean request body with the required fields
             const requestBody = {
@@ -415,22 +418,25 @@ class AdminPanel {
                 description: tournamentData.description,
                 format: tournamentData.format,
                 startDate: tournamentData.startDate,
-                organizer: organizerId,  // This will be used by the server
-                status: 'upcoming',
+                // The organizer will be set by the server from req.user.id
                 settings: {
                     prizePool: tournamentData.settings?.prizePool || 0,
                     capacity: tournamentData.settings?.capacity || 16,
                     entryFee: tournamentData.entryFee || 0,
                     rules: tournamentData.rules || ''
-                }
+                },
+                status: 'upcoming'
             };
+            
+            console.log('Request body:', JSON.stringify(requestBody, null, 2));
             
             const response = await fetch(`${apiBase}/api/tournaments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'x-user-id': organizerId  // Explicitly pass user ID in headers
                 },
                 body: JSON.stringify(requestBody)
             });
