@@ -401,7 +401,7 @@ class AdminPanel {
             const token = localStorage.getItem('token') || '';
             
             // Get the current user's ID from the authentication token or user object
-            const organizerId = this.currentUser?.id || JSON.parse(localStorage.getItem('user'))?.id;
+            const organizerId = this.currentUser?._id || this.currentUser?.id || JSON.parse(localStorage.getItem('user') || '{}')?._id || JSON.parse(localStorage.getItem('user') || '{}')?.id || 'dev-admin';
             
             if (!organizerId) {
                 throw new Error('User not authenticated. Please log in again.');
