@@ -7,9 +7,22 @@ class AdminPanel {
     init() {
         this.checkAuth();
         this.setupEventListeners();
-        this.loadAdminData();
         this.setupModals();
         this.setupResponsiveMenu();
+
+        // Load page-specific data
+        const path = window.location.pathname;
+        if (path.includes('admin.html') || path.endsWith('/')) {
+            this.loadAdminData();
+        } else if (path.includes('admin-tournaments.html')) {
+            this.loadTournamentsManagement();
+        } else if (path.includes('admin-matches.html')) {
+            this.loadMatchesManagement();
+        } else if (path.includes('admin-players.html')) {
+            this.loadPlayersManagement();
+        } else if (path.includes('admin-payments.html')) {
+            this.loadPaymentsManagement();
+        }
     }
 
     checkAuth() {
@@ -46,22 +59,6 @@ class AdminPanel {
             console.warn('Logout button not found');
         }
 
-        // Navigation
-        const navLinks = document.querySelectorAll('.nav-link');
-        if (navLinks.length > 0) {
-            navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const href = link.getAttribute('href');
-                    console.log('Navigation link clicked:', href);
-                    if (href && href.startsWith('#')) {
-                        this.handleNavigation(href.substring(1));
-                    }
-                });
-            });
-        } else {
-            console.warn('No navigation links found');
-        }
 
         // Create tournament form
         const createTournamentForm = document.getElementById('createTournamentForm');
@@ -295,54 +292,6 @@ class AdminPanel {
         }
     }
 
-    handleNavigation(section) {
-        if (!section) return;
-        
-        // Update active nav link
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-        });
-        
-        const activeLink = document.querySelector(`[href="#${section}"]`);
-        if (activeLink) {
-            activeLink.classList.add('active');
-        }
-
-        // Show corresponding section
-        const sections = document.querySelectorAll('.admin-section');
-        if (sections.length > 0) {
-            sections.forEach(sectionEl => {
-                if (sectionEl.style) {
-                    sectionEl.style.display = 'none';
-                }
-            });
-            
-            const targetSection = document.getElementById(section);
-            if (targetSection && targetSection.style) {
-                targetSection.style.display = 'block';
-            }
-        }
-
-        // Load section-specific data
-        this.loadSectionData(section);
-    }
-
-    loadSectionData(section) {
-        switch (section) {
-            case 'tournaments':
-                this.loadTournamentsManagement();
-                break;
-            case 'matches':
-                this.loadMatchesManagement();
-                break;
-            case 'players':
-                this.loadPlayersManagement();
-                break;
-            case 'payments':
-                this.loadPaymentsManagement();
-                break;
-        }
-    }
 
     async handleCreateTournament() {
         const tournamentForm = document.getElementById('createTournamentForm');

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments Management - TONA KIKWETU</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <script>
+        window.API_BASE_URL = 'https://efootball-backend-f8ws.onrender.com';
+    </script>
+    <!-- Admin Navigation -->
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="assets/images/ChatGPT%20Image%20Nov%2012,%202025,%2011_55_36%20PM.png" alt="Tona Kikwetu Logo" class="site-logo">
+                <span class="site-title">TONA KIKWETU <span class="admin-text">ADMIN</span></span>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <a href="admin.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin-tournaments.html" class="nav-link">
+                    <i class="fas fa-trophy"></i>
+                    <span>Tournaments</span>
+                </a>
+                <a href="admin-matches.html" class="nav-link">
+                    <i class="fas fa-gamepad"></i>
+                    <span>Matches</span>
+                </a>
+                <a href="admin-players.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Players</span>
+                </a>
+                <a href="admin-payments.html" class="nav-link active">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payments</span>
+                </a>
+                <button class="theme-toggle nav-link" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-logout professional" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Payments Management Section -->
+    <section class="admin-section">
+        <div class="container">
+            <h1>Payments Management</h1>
+            <div id="paymentsContainer">
+                <!-- Payments will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
