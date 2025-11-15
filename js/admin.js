@@ -453,7 +453,7 @@ class AdminPanel {
         try {
             const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token');
-            const resp = await fetch(`${apiBase}/api/tournaments`, {
+            const resp = await fetch(`${apiBase}/api/admin/tournaments`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -465,7 +465,7 @@ class AdminPanel {
             const container = document.getElementById('tournamentsContainer');
 
             if (tournaments.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No tournaments created yet. <a href="#dashboard">Create your first tournament</a></p></div>';
+                container.innerHTML = '<div class="empty-state"><p>No tournaments created yet. <a href="admin.html">Create your first tournament</a></p></div>';
             } else {
                 container.innerHTML = `
                     <div class="tournaments-list">
@@ -500,7 +500,7 @@ class AdminPanel {
         try {
             const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token');
-            const resp = await fetch(`${apiBase}/api/matches`, {
+            const resp = await fetch(`${apiBase}/api/admin/matches/pending`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -512,7 +512,7 @@ class AdminPanel {
             const container = document.getElementById('matchesContainer');
 
             if (matches.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No matches available.</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>No pending matches to review.</p></div>';
             } else {
                 container.innerHTML = `
                     <div class="matches-list">
@@ -524,16 +524,11 @@ class AdminPanel {
                                 </div>
                                 <div class="card-body">
                                     <p><strong>Tournament:</strong> ${match.tournament?.name || 'N/A'}</p>
-                                    <p><strong>Round:</strong> ${match.round || 'N/A'}</p>
-                                    <div class="score-inputs">
-                                        <label>Player 1 Score:</label>
-                                        <input type="number" id="score1-${match._id}" value="${match.score1 || 0}" min="0">
-                                        <label>Player 2 Score:</label>
-                                        <input type="number" id="score2-${match._id}" value="${match.score2 || 0}" min="0">
-                                    </div>
+                                    <p><strong>Submitted Scores:</strong> ${match.result?.score1 || 0} - ${match.result?.score2 || 0}</p>
+                                    <p><strong>Winner:</strong> ${match.result?.winner ? (match.result.winner.efootballId || 'Unknown') : 'Pending'}</p>
                                 </div>
                                 <div class="card-actions">
-                                    <button class="btn-primary" onclick="window.adminPanel.updateMatchScore('${match._id}')">Update Score</button>
+                                    <button class="btn-primary" onclick="window.adminPanel.verifyMatch('${match._id}')">Verify Result</button>
                                 </div>
                             </div>
                         `).join('')}
@@ -547,63 +542,16 @@ class AdminPanel {
     }
 
     async loadPlayersManagement() {
-        try {
-            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
-            const token = localStorage.getItem('token');
-            const resp = await fetch(`${apiBase}/api/users`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const data = await resp.json();
-            if (!resp.ok) throw new Error(data.message || 'Failed to load players');
-
-            const players = data.users || [];
-            const container = document.getElementById('playersContainer');
-
-            if (players.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No players registered yet.</p></div>';
-            } else {
-                container.innerHTML = `
-                    <div class="players-list">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>eFootball ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Joined</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${players.map(player => `
-                                    <tr>
-                                        <td>${player.efootballId || 'N/A'}</td>
-                                        <td>${player.name || 'N/A'}</td>
-                                        <td>${player.email || 'N/A'}</td>
-                                        <td>${player.phone || 'N/A'}</td>
-                                        <td>${new Date(player.createdAt).toLocaleDateString()}</td>
-                                        <td><span class="status-badge status-active">Active</span></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            console.error('Error loading players:', error);
-            document.getElementById('playersContainer').innerHTML = '<div class="error-state"><p>Failed to load players. Please try again.</p></div>';
-        }
+        // For now, show a placeholder since there's no admin endpoint for users
+        const container = document.getElementById('playersContainer');
+        container.innerHTML = '<div class="empty-state"><p>Player management functionality is under development. Check back later.</p></div>';
     }
 
     async loadPaymentsManagement() {
         try {
             const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token');
-            const resp = await fetch(`${apiBase}/api/payments`, {
+            const resp = await fetch(`${apiBase}/api/admin/payments`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -628,6 +576,7 @@ class AdminPanel {
                                     <th>Tournament</th>
                                     <th>Status</th>
                                     <th>Date</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -639,6 +588,12 @@ class AdminPanel {
                                         <td>${payment.tournament?.name || 'N/A'}</td>
                                         <td><span class="status-badge status-${payment.status}">${payment.status}</span></td>
                                         <td>${new Date(payment.createdAt).toLocaleDateString()}</td>
+                                        <td>
+                                            ${payment.status === 'pending' ? `
+                                                <button class="btn-sm btn-approve" onclick="window.adminPanel.processPayment('${payment._id}', 'approve')">Approve</button>
+                                                <button class="btn-sm btn-reject" onclick="window.adminPanel.processPayment('${payment._id}', 'reject')">Reject</button>
+                                            ` : ''}
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -686,32 +641,47 @@ class AdminPanel {
         }
     }
 
-    async updateMatchScore(matchId) {
-        const score1 = document.getElementById(`score1-${matchId}`).value;
-        const score2 = document.getElementById(`score2-${matchId}`).value;
-
+    async verifyMatch(matchId) {
         try {
             const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token');
-            const resp = await fetch(`${apiBase}/api/matches/${matchId}/score`, {
-                method: 'PUT',
+            const resp = await fetch(`${apiBase}/api/admin/matches/${matchId}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!resp.ok) throw new Error('Failed to verify match');
+
+            this.showNotification('Match result verified successfully', 'success');
+            this.loadMatchesManagement(); // Refresh the list
+        } catch (error) {
+            console.error('Error verifying match:', error);
+            this.showNotification('Failed to verify match', 'error');
+        }
+    }
+
+    async processPayment(paymentId, action) {
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/admin/payments/${paymentId}/process`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    score1: parseInt(score1),
-                    score2: parseInt(score2)
-                })
+                body: JSON.stringify({ action })
             });
 
-            if (!resp.ok) throw new Error('Failed to update score');
+            if (!resp.ok) throw new Error('Failed to process payment');
 
-            this.showNotification('Match score updated successfully', 'success');
-            this.loadMatchesManagement(); // Refresh the list
+            this.showNotification(`Payment ${action}d successfully`, 'success');
+            this.loadPaymentsManagement(); // Refresh the list
         } catch (error) {
-            console.error('Error updating match score:', error);
-            this.showNotification('Failed to update match score', 'error');
+            console.error('Error processing payment:', error);
+            this.showNotification('Failed to process payment', 'error');
         }
     }
 
