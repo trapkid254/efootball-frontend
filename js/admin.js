@@ -229,17 +229,10 @@ class AdminPanel {
             // Set up form submission
             const form = document.getElementById('createTournamentForm');
             if (form) {
-                // Remove any existing event listeners to prevent duplicates
-                const newForm = form.cloneNode(true);
-                form.parentNode.replaceChild(newForm, form);
-                
-                // Add new event listener
-                newForm.addEventListener('submit', (e) => {
+                form.onsubmit = (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
                     this.handleCreateTournament();
-                    return false;
-                }, { once: true }); // The { once: true } option ensures the event is only handled once
+                };
             }
         } else {
             console.error('Create tournament modal not found');
@@ -354,22 +347,24 @@ class AdminPanel {
                 break;
             case 'payments':
                 this.loadPaymentsManagement();
-
-        const container = document.getElementById('adminActivityTable');
-        container.innerHTML = activities.slice(0, 15).map(a => `
-            <tr>
-                <td>${a.time}</td>
-                <td>${a.activity}</td>
-                <td>${a.user}</td>
-                <td>${a.details}</td>
-            </tr>
-        `).join('');
-
-    } catch (error) {
-        console.error('Error loading admin data:', error);
-        this.showNotification('Failed to load admin data', 'error');
+                break;
+        }
     }
-}
+
+    async handleCreateTournament() {
+        const tournamentForm = document.getElementById('createTournamentForm');
+        if (!tournamentForm) {
+            console.error('Tournament form not found');
+            return;
+        }
+
+        // Disable the submit button to prevent multiple submissions
+        const submitBtn = tournamentForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        }
 
         try {
             // Get form data
@@ -468,12 +463,8 @@ class AdminPanel {
             this.showNotification('Tournament created successfully!', 'success');
             this.hideCreateTournamentModal();
             
-            // Reset the form and re-enable the submit button
+            // Reset the form
             tournamentForm.reset();
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Create Tournament';
-            }
             
             // Reload the tournaments section if it's active
             if (window.location.hash === '#tournaments') {
@@ -487,12 +478,6 @@ class AdminPanel {
             console.error('Error creating tournament:', error);
             const errorMessage = error.message || 'Failed to create tournament. Please try again.';
             this.showNotification(errorMessage, 'error');
-            
-            // Re-enable the submit button on error
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Create Tournament';
-            }
         } finally {
             // Re-enable the submit button
             if (submitBtn) {
