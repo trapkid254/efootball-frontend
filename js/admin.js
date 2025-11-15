@@ -288,7 +288,18 @@ class AdminPanel {
 
         } catch (error) {
             console.error('Error loading admin data:', error);
-            // Show mock data for development
+            // Try to load from localStorage first
+            const storedActivities = localStorage.getItem('adminRecentActivities');
+            let activities = [];
+            if (storedActivities) {
+                try {
+                    activities = JSON.parse(storedActivities);
+                } catch (parseError) {
+                    console.error('Error parsing stored activities:', parseError);
+                }
+            }
+
+            // Show stored data or mock data
             const mockStats = {
                 totalPlayers: 25,
                 activeTournaments: 3,
@@ -300,19 +311,30 @@ class AdminPanel {
             document.getElementById('pendingMatches').textContent = mockStats.pendingMatches;
             document.getElementById('totalRevenue').textContent = `KSh ${mockStats.totalRevenue.toLocaleString()}`;
 
-            const mockActivities = [
-                { time: new Date().toLocaleString(), activity: 'Tournament Created', user: 'Admin', details: 'Sample Tournament' },
-                { time: new Date().toLocaleString(), activity: 'Player Registered', user: 'Player1', details: '' }
-            ];
             const container = document.getElementById('adminActivityTable');
-            container.innerHTML = mockActivities.map(a => `
-                <tr>
-                    <td>${a.time}</td>
-                    <td>${a.activity}</td>
-                    <td>${a.user}</td>
-                    <td>${a.details}</td>
-                </tr>
-            `).join('');
+            if (activities.length > 0) {
+                container.innerHTML = activities.slice(0, 15).map(a => `
+                    <tr>
+                        <td>${a.time}</td>
+                        <td>${a.activity}</td>
+                        <td>${a.user}</td>
+                        <td>${a.details}</td>
+                    </tr>
+                `).join('');
+            } else {
+                const mockActivities = [
+                    { time: new Date().toLocaleString(), activity: 'Tournament Created', user: 'Admin', details: 'Sample Tournament' },
+                    { time: new Date().toLocaleString(), activity: 'Player Registered', user: 'Player1', details: '' }
+                ];
+                container.innerHTML = mockActivities.map(a => `
+                    <tr>
+                        <td>${a.time}</td>
+                        <td>${a.activity}</td>
+                        <td>${a.user}</td>
+                        <td>${a.details}</td>
+                    </tr>
+                `).join('');
+            }
         }
     }
 
