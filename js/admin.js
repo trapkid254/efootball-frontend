@@ -226,14 +226,7 @@ class AdminPanel {
                 }
             });
             
-            // Set up form submission
-            const form = document.getElementById('createTournamentForm');
-            if (form) {
-                form.onsubmit = (e) => {
-                    e.preventDefault();
-                    this.handleCreateTournament();
-                };
-            }
+            // Form submission is already set up in setupEventListeners
         } else {
             console.error('Create tournament modal not found');
         }
