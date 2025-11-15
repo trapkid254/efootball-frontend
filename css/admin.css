@@ -391,6 +391,26 @@
     color: white;
 }
 
+.status-upcoming {
+    background: var(--warning-color);
+    color: var(--bg-primary);
+}
+
+.status-ongoing {
+    background: var(--accent-color);
+    color: white;
+}
+
+.status-finished {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-cancelled {
+    background: var(--error-color);
+    color: white;
+}
+
 /* Action Buttons in Tables */
 .table-actions {
     display: flex;
@@ -691,12 +711,170 @@ body.modal-open {
     .nav-logo {
         max-width: 60%;
     }
-    
+
     .site-title {
         font-size: 0.9rem;
     }
-    
+
     .admin-text {
         display: none;
     }
+}
+
+/* Professional Logout Button */
+.btn-logout.professional {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.btn-logout.professional:hover {
+    background: linear-gradient(135deg, #c82333, #a02622);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+}
+
+.btn-logout.professional i {
+    margin-right: 0.5rem;
+}
+
+/* Admin Management Sections */
+.admin-section {
+    margin-top: 80px;
+    padding: 2rem 0;
+    min-height: calc(100vh - 80px);
+}
+
+.admin-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.admin-card .card-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.admin-card .card-body p {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+}
+
+.admin-card .card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn-danger {
+    background: var(--error-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.admin-table {
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.admin-table td {
+    color: var(--text-primary);
+}
+
+.admin-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.score-inputs {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.score-inputs label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.score-inputs input {
+    width: 80px;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.empty-state,
+.error-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i,
+.error-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.empty-state a:hover {
+    text-decoration: underline;
 }

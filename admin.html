@@ -45,9 +45,11 @@
                 </a>
                 <button class="theme-toggle nav-link" id="themeToggle">
                     <i class="fas fa-moon"></i>
-                    <span>Theme</span>
                 </button>
-                <button class="btn-logout" id="logoutBtn">Logout</button>
+                <button class="btn-logout professional" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
         </div>
     </nav>
@@ -203,6 +205,46 @@
             </form>
         </div>
     </div>
+
+    <!-- Tournaments Management Section -->
+    <section class="admin-section" id="tournaments" style="display: none;">
+        <div class="container">
+            <h1>Tournaments Management</h1>
+            <div id="tournamentsContainer">
+                <!-- Tournaments will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Matches Management Section -->
+    <section class="admin-section" id="matches" style="display: none;">
+        <div class="container">
+            <h1>Matches Management</h1>
+            <div id="matchesContainer">
+                <!-- Matches will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Players Management Section -->
+    <section class="admin-section" id="players" style="display: none;">
+        <div class="container">
+            <h1>Players Management</h1>
+            <div id="playersContainer">
+                <!-- Players will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Payments Management Section -->
+    <section class="admin-section" id="payments" style="display: none;">
+        <div class="container">
+            <h1>Payments Management</h1>
+            <div id="paymentsContainer">
+                <!-- Payments will be loaded here -->
+            </div>
+        </div>
+    </section>
 
     <script src="js/auth.js"></script>
     <script src="js/admin.js"></script>

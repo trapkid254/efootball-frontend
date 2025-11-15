@@ -501,29 +501,269 @@ class AdminPanel {
     }
 
     async loadTournamentsManagement() {
-        // Implementation for tournaments management
-        console.log('Loading tournaments management...');
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/tournaments`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.message || 'Failed to load tournaments');
+
+            const tournaments = data.tournaments || [];
+            const container = document.getElementById('tournamentsContainer');
+
+            if (tournaments.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No tournaments created yet. <a href="#dashboard">Create your first tournament</a></p></div>';
+            } else {
+                container.innerHTML = `
+                    <div class="tournaments-list">
+                        ${tournaments.map(tournament => `
+                            <div class="tournament-card admin-card">
+                                <div class="card-header">
+                                    <h3>${tournament.name}</h3>
+                                    <span class="status-badge status-${tournament.status}">${tournament.status}</span>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Format:</strong> ${tournament.format}</p>
+                                    <p><strong>Participants:</strong> ${tournament.participants?.length || 0}/${tournament.capacity || tournament.settings?.capacity || 0}</p>
+                                    <p><strong>Prize Pool:</strong> KSh ${(tournament.prizePool || tournament.settings?.prizePool || 0).toLocaleString()}</p>
+                                    <p><strong>Entry Fee:</strong> KSh ${(tournament.entryFee || tournament.settings?.entryFee || 0).toLocaleString()}</p>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-secondary" onclick="window.adminPanel.editTournament('${tournament._id}')">Edit</button>
+                                    <button class="btn-danger" onclick="window.adminPanel.deleteTournament('${tournament._id}')">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading tournaments:', error);
+            document.getElementById('tournamentsContainer').innerHTML = '<div class="error-state"><p>Failed to load tournaments. Please try again.</p></div>';
+        }
     }
 
     async loadMatchesManagement() {
-        // Implementation for matches management
-        console.log('Loading matches management...');
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/matches`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.message || 'Failed to load matches');
+
+            const matches = data.matches || [];
+            const container = document.getElementById('matchesContainer');
+
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No matches available.</p></div>';
+            } else {
+                container.innerHTML = `
+                    <div class="matches-list">
+                        ${matches.map(match => `
+                            <div class="match-card admin-card">
+                                <div class="card-header">
+                                    <h3>${match.player1?.user?.efootballId || 'Player 1'} vs ${match.player2?.user?.efootballId || 'Player 2'}</h3>
+                                    <span class="status-badge status-${match.status}">${match.status}</span>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Tournament:</strong> ${match.tournament?.name || 'N/A'}</p>
+                                    <p><strong>Round:</strong> ${match.round || 'N/A'}</p>
+                                    <div class="score-inputs">
+                                        <label>Player 1 Score:</label>
+                                        <input type="number" id="score1-${match._id}" value="${match.score1 || 0}" min="0">
+                                        <label>Player 2 Score:</label>
+                                        <input type="number" id="score2-${match._id}" value="${match.score2 || 0}" min="0">
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn-primary" onclick="window.adminPanel.updateMatchScore('${match._id}')">Update Score</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading matches:', error);
+            document.getElementById('matchesContainer').innerHTML = '<div class="error-state"><p>Failed to load matches. Please try again.</p></div>';
+        }
     }
 
     async loadPlayersManagement() {
-        // Implementation for players management
-        console.log('Loading players management...');
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.message || 'Failed to load players');
+
+            const players = data.users || [];
+            const container = document.getElementById('playersContainer');
+
+            if (players.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No players registered yet.</p></div>';
+            } else {
+                container.innerHTML = `
+                    <div class="players-list">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>eFootball ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Joined</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${players.map(player => `
+                                    <tr>
+                                        <td>${player.efootballId || 'N/A'}</td>
+                                        <td>${player.name || 'N/A'}</td>
+                                        <td>${player.email || 'N/A'}</td>
+                                        <td>${player.phone || 'N/A'}</td>
+                                        <td>${new Date(player.createdAt).toLocaleDateString()}</td>
+                                        <td><span class="status-badge status-active">Active</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading players:', error);
+            document.getElementById('playersContainer').innerHTML = '<div class="error-state"><p>Failed to load players. Please try again.</p></div>';
+        }
     }
 
     async loadPaymentsManagement() {
-        // Implementation for payments management
-        console.log('Loading payments management...');
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/payments`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.message || 'Failed to load payments');
+
+            const payments = data.payments || [];
+            const container = document.getElementById('paymentsContainer');
+
+            if (payments.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No payments recorded yet.</p></div>';
+            } else {
+                container.innerHTML = `
+                    <div class="payments-list">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Player</th>
+                                    <th>Amount</th>
+                                    <th>Tournament</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${payments.map(payment => `
+                                    <tr>
+                                        <td>${payment.transactionId || 'N/A'}</td>
+                                        <td>${payment.user?.efootballId || payment.user?.name || 'N/A'}</td>
+                                        <td>KSh ${payment.amount?.toLocaleString() || '0'}</td>
+                                        <td>${payment.tournament?.name || 'N/A'}</td>
+                                        <td><span class="status-badge status-${payment.status}">${payment.status}</span></td>
+                                        <td>${new Date(payment.createdAt).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading payments:', error);
+            document.getElementById('paymentsContainer').innerHTML = '<div class="error-state"><p>Failed to load payments. Please try again.</p></div>';
+        }
     }
 
     logout() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = 'index.html';
+    }
+
+    async editTournament(tournamentId) {
+        // For now, just show an alert. Full edit functionality can be implemented later
+        alert('Edit tournament functionality will be implemented. Tournament ID: ' + tournamentId);
+    }
+
+    async deleteTournament(tournamentId) {
+        if (!confirm('Are you sure you want to delete this tournament?')) return;
+
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/tournaments/${tournamentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!resp.ok) throw new Error('Failed to delete tournament');
+
+            this.showNotification('Tournament deleted successfully', 'success');
+            this.loadTournamentsManagement(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting tournament:', error);
+            this.showNotification('Failed to delete tournament', 'error');
+        }
+    }
+
+    async updateMatchScore(matchId) {
+        const score1 = document.getElementById(`score1-${matchId}`).value;
+        const score2 = document.getElementById(`score2-${matchId}`).value;
+
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${apiBase}/api/matches/${matchId}/score`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    score1: parseInt(score1),
+                    score2: parseInt(score2)
+                })
+            });
+
+            if (!resp.ok) throw new Error('Failed to update score');
+
+            this.showNotification('Match score updated successfully', 'success');
+            this.loadMatchesManagement(); // Refresh the list
+        } catch (error) {
+            console.error('Error updating match score:', error);
+            this.showNotification('Failed to update match score', 'error');
+        }
     }
 
     setupResponsiveMenu() {
