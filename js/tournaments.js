@@ -306,7 +306,7 @@ class TournamentsPage {
             return `
             <div class="tournament-card" data-status="${tournament.status}" data-format="${tournament.format}" data-fee="${entryFee === 0 ? 'free' : 'paid'}">
                 <div class="tournament-header">
-                    <span class="tournament-prize">KSh ${tournament.prizePool?.toLocaleString() || '0'}</span>
+                    <span class="tournament-prize">KSh ${(tournament.prizePool || tournament.settings?.prizePool || 0).toLocaleString()}</span>
                     <span class="tournament-status ${tournament.status}">${tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}</span>
                 </div>
                 <div class="tournament-info">
