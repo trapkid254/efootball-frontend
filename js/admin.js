@@ -237,104 +237,120 @@ class AdminPanel {
         }
     }
 
+    // Helper method to process activities from server response
+    processActivities(activityData) {
+        const activities = [];
+        
+        // Process tournaments
+        (activityData.tournaments || []).forEach(t => activities.push({
+            time: new Date(t.createdAt).toLocaleString(),
+            activity: 'Tournament Created',
+            user: t.organizer?.efootballId || 'Admin',
+            details: t.name
+        }));
+        
+        // Process matches
+        (activityData.matches || []).forEach(m => activities.push({
+            time: new Date(m.createdAt).toLocaleString(),
+            activity: 'Match Recorded',
+            user: `${m.player1?.user?.efootballId || ''} vs ${m.player2?.user?.efootballId || ''}`.trim(),
+            details: m.tournament?.name || `Match #${m.matchNumber || ''}`
+        }));
+        
+        // Process registrations
+        (activityData.registrations || []).forEach(r => activities.push({
+            time: new Date(r.createdAt).toLocaleString(),
+            activity: 'Player Registered',
+            user: r.efootballId,
+            details: ''
+        }));
+        
+        return activities;
+    }
+
+    // Helper method to update the UI with activities
+    updateActivitiesUI(activities) {
+        const container = document.getElementById('adminActivityTable');
+        if (!container) return;
+        
+        container.innerHTML = activities.slice(0, 15).map(a => `
+            <tr>
+                <td>${a.time}</td>
+                <td>${a.activity}</td>
+                <td>${a.user}</td>
+                <td>${a.details}</td>
+            </tr>
+        `).join('');
+    }
+
     async loadAdminData() {
+        const updateUI = (activities) => {
+            this.updateActivitiesUI(activities);
+            // Save to localStorage for offline use
+            try {
+                localStorage.setItem('adminRecentActivities', JSON.stringify(activities));
+            } catch (e) {
+                console.warn('Failed to save activities to localStorage', e);
+            }
+        };
+
         try {
-            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
-            const token = localStorage.getItem('token');
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token') || '';
             const resp = await fetch(`${apiBase}/api/admin/dashboard`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (!resp.ok) throw new Error('Failed to load from server');
+
             const data = await resp.json();
-            if (!resp.ok || !data.success) throw new Error(data.message || 'Failed to load admin data');
+            if (data && data.success) {
+                const stats = data.stats || {};
+                const el = id => document.getElementById(id);
+                if (el('totalPlayers')) el('totalPlayers').textContent = stats.totalPlayers ?? 0;
+                if (el('activeTournamentsCount')) el('activeTournamentsCount').textContent = stats.activeTournaments ?? 0;
+                if (el('pendingMatches')) el('pendingMatches').textContent = stats.pendingMatches ?? 0;
+                if (el('totalRevenue')) el('totalRevenue').textContent = `KSh ${(stats.totalRevenue || 0).toLocaleString()}`;
 
-            const stats = data.stats || {};
-            document.getElementById('totalPlayers').textContent = stats.totalPlayers ?? 0;
-            document.getElementById('activeTournamentsCount').textContent = stats.activeTournaments ?? 0;
-            document.getElementById('pendingMatches').textContent = stats.pendingMatches ?? 0;
-            document.getElementById('totalRevenue').textContent = `KSh ${(stats.totalRevenue || 0).toLocaleString()}`;
+                const activities = this.processActivities(data.recentActivity || {});
+                updateUI(activities);
+                return;
+            }
 
-            const recent = data.recentActivity || {};
-            const activities = [];
-            (recent.tournaments || []).forEach(t => activities.push({
-                time: new Date(t.createdAt).toLocaleString(),
-                activity: 'Tournament Created',
-                user: t.organizer?.efootballId || 'Admin',
-                details: t.name
-            }));
-            (recent.matches || []).forEach(m => activities.push({
-                time: new Date(m.createdAt).toLocaleString(),
-                activity: 'Match Recorded',
-                user: `${m.player1?.user?.efootballId || ''} vs ${m.player2?.user?.efootballId || ''}`.trim(),
-                details: m.tournament?.name || `Match #${m.matchNumber || ''}`
-            }));
-            (recent.registrations || []).forEach(r => activities.push({
-                time: new Date(r.createdAt).toLocaleString(),
-                activity: 'Player Registered',
-                user: r.efootballId,
-                details: ''
-            }));
-
-            const container = document.getElementById('adminActivityTable');
-            container.innerHTML = activities.slice(0, 15).map(a => `
-                <tr>
-                    <td>${a.time}</td>
-                    <td>${a.activity}</td>
-                    <td>${a.user}</td>
-                    <td>${a.details}</td>
-                </tr>
-            `).join('');
-
+            throw new Error('Invalid server response');
         } catch (error) {
-            console.error('Error loading admin data:', error);
-            // Try to load from localStorage first
-            const storedActivities = localStorage.getItem('adminRecentActivities');
-            let activities = [];
-            if (storedActivities) {
+            console.warn('Server load failed, falling back to localStorage/mock:', error);
+
+            // Try localStorage
+            const stored = localStorage.getItem('adminRecentActivities');
+            if (stored) {
                 try {
-                    activities = JSON.parse(storedActivities);
-                } catch (parseError) {
-                    console.error('Error parsing stored activities:', parseError);
+                    const parsed = JSON.parse(stored);
+                    updateUI(parsed);
+                    return;
+                } catch (e) {
+                    console.warn('Failed to parse stored activities', e);
                 }
             }
 
-            // Show stored data or mock data
+            // Fallback mock stats and activities
             const mockStats = {
                 totalPlayers: 25,
                 activeTournaments: 3,
                 pendingMatches: 5,
                 totalRevenue: 15000
             };
-            document.getElementById('totalPlayers').textContent = mockStats.totalPlayers;
-            document.getElementById('activeTournamentsCount').textContent = mockStats.activeTournaments;
-            document.getElementById('pendingMatches').textContent = mockStats.pendingMatches;
-            document.getElementById('totalRevenue').textContent = `KSh ${mockStats.totalRevenue.toLocaleString()}`;
+            const el = id => document.getElementById(id);
+            if (el('totalPlayers')) el('totalPlayers').textContent = mockStats.totalPlayers;
+            if (el('activeTournamentsCount')) el('activeTournamentsCount').textContent = mockStats.activeTournaments;
+            if (el('pendingMatches')) el('pendingMatches').textContent = mockStats.pendingMatches;
+            if (el('totalRevenue')) el('totalRevenue').textContent = `KSh ${mockStats.totalRevenue.toLocaleString()}`;
 
-            const container = document.getElementById('adminActivityTable');
-            if (activities.length > 0) {
-                container.innerHTML = activities.slice(0, 15).map(a => `
-                    <tr>
-                        <td>${a.time}</td>
-                        <td>${a.activity}</td>
-                        <td>${a.user}</td>
-                        <td>${a.details}</td>
-                    </tr>
-                `).join('');
-            } else {
-                const mockActivities = [
-                    { time: new Date().toLocaleString(), activity: 'Tournament Created', user: 'Admin', details: 'Sample Tournament' },
-                    { time: new Date().toLocaleString(), activity: 'Player Registered', user: 'Player1', details: '' }
-                ];
-                container.innerHTML = mockActivities.map(a => `
-                    <tr>
-                        <td>${a.time}</td>
-                        <td>${a.activity}</td>
-                        <td>${a.user}</td>
-                        <td>${a.details}</td>
-                    </tr>
-                `).join('');
-            }
+            const mockActivities = [
+                { time: new Date().toLocaleString(), activity: 'Tournament Created', user: 'Admin', details: 'Sample Tournament' },
+                { time: new Date().toLocaleString(), activity: 'Player Registered', user: 'Player1', details: '' }
+            ];
+            updateUI(mockActivities);
         }
     }
 
