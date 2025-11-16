@@ -475,15 +475,33 @@ class AdminPanel {
 
             this.showNotification('Tournament created successfully!', 'success');
             this.hideCreateTournamentModal();
-            
+
             // Reset the form
             tournamentForm.reset();
-            
+
+            // Add to localStorage recent activities
+            const newActivity = {
+                time: new Date().toLocaleString(),
+                activity: 'Tournament Created',
+                user: 'Admin',
+                details: tournamentData.name
+            };
+            const storedActivities = localStorage.getItem('adminRecentActivities');
+            let activities = [];
+            if (storedActivities) {
+                try {
+                    activities = JSON.parse(storedActivities);
+                } catch (e) {}
+            }
+            activities.unshift(newActivity); // Add to beginning
+            activities = activities.slice(0, 15); // Keep only 15
+            localStorage.setItem('adminRecentActivities', JSON.stringify(activities));
+
             // Reload the tournaments section if it's active
             if (window.location.hash === '#tournaments') {
                 this.loadSectionData('tournaments');
             }
-            
+
             // Refresh dashboard stats
             this.loadAdminData();
             
