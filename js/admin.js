@@ -532,28 +532,17 @@ class AdminPanel {
 
         try {
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
-            const token = localStorage.getItem('token') || '';
             
-            console.log('Fetching tournaments from:', `${apiBase}/api/admin/tournaments`);
-            
-            const resp = await fetch(`${apiBase}/api/admin/tournaments`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include'  // Important for cookies/sessions
-            });
+            const resp = await fetch(`${apiBase}/api/admin/tournaments`);
 
             if (!resp.ok) {
                 const errorData = await resp.json().catch(() => ({}));
-                console.error('Server error:', errorData);
                 throw new Error(errorData.message || `HTTP error! status: ${resp.status}`);
             }
 
             const data = await resp.json();
-            console.log('Tournaments data:', data);
             
+            // The server returns the tournaments directly in the response
             const tournaments = data.tournaments || [];
 
             if (tournaments.length === 0) {
