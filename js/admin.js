@@ -558,23 +558,31 @@ class AdminPanel {
             return;
         }
 
+        console.log('Loading tournaments management...');
+        console.log('API Base URL:', window.API_BASE_URL);
+
         // Show loading state
         container.innerHTML = '<div class="loading">Loading tournaments...</div>';
 
         try {
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
-            
+            console.log('Making request to:', `${apiBase}/api/admin/tournaments`);
+
             const resp = await fetch(`${apiBase}/api/admin/tournaments`);
+            console.log('Response status:', resp.status);
 
             if (!resp.ok) {
                 const errorData = await resp.json().catch(() => ({}));
+                console.error('Error response:', errorData);
                 throw new Error(errorData.message || `HTTP error! status: ${resp.status}`);
             }
 
             const data = await resp.json();
-            
+            console.log('Response data:', data);
+
             // The server returns the tournaments directly in the response
             const tournaments = data.tournaments || [];
+            console.log('Found tournaments:', tournaments.length);
 
             if (tournaments.length === 0) {
                 container.innerHTML = `
