@@ -10,17 +10,26 @@ class AdminPanel {
         this.setupModals();
         this.setupResponsiveMenu();
 
+        // Debug log to track which page is being loaded
+        console.log('Initializing admin panel for URL:', window.location.href);
+
         // Load page-specific data
         const url = window.location.href;
         if (url.includes('admin.html') && !url.includes('admin-tournaments') && !url.includes('admin-matches') && !url.includes('admin-players') && !url.includes('admin-payments')) {
+            console.log('Loading admin dashboard');
             this.loadAdminData();
         } else if (url.includes('admin-tournaments.html')) {
-            this.loadTournamentsManagement();
+            console.log('Loading tournaments management');
+            // Add a small delay to ensure the DOM is fully loaded
+            setTimeout(() => this.loadTournamentsManagement(), 100);
         } else if (url.includes('admin-matches.html')) {
+            console.log('Loading matches management');
             this.loadMatchesManagement();
         } else if (url.includes('admin-players.html')) {
+            console.log('Loading players management');
             this.loadPlayersManagement();
         } else if (url.includes('admin-payments.html')) {
+            console.log('Loading payments management');
             this.loadPaymentsManagement();
         }
     }
@@ -543,6 +552,7 @@ class AdminPanel {
     }
 
     async loadTournamentsManagement() {
+        console.log('loadTournamentsManagement called');
         const container = document.getElementById('tournamentsContainer');
         if (!container) {
             console.error('Tournaments container not found');
@@ -558,15 +568,25 @@ class AdminPanel {
 
         try {
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
+            const url = `${apiBase}/api/tournaments`;
             
-            console.log('Fetching tournaments from:', `${apiBase}/api/tournaments`);
+            console.log('Fetching tournaments from:', url);
             
-            const resp = await fetch(`${apiBase}/api/tournaments`, {
+            // Add cache-busting parameter to prevent caching issues
+            const timestamp = new Date().getTime();
+            const resp = await fetch(`${url}?_=${timestamp}`, {
+                method: 'GET',
                 headers: {
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
             });
 
+            console.log('Response status:', resp.status);
+            
             if (!resp.ok) {
                 const errorText = await resp.text();
                 console.error('Error response:', errorText);
@@ -574,11 +594,15 @@ class AdminPanel {
             }
 
             const data = await resp.json();
-            console.log('API Response:', data);
+            console.log('API Response:', JSON.stringify(data, null, 2));
             
             // Handle both array and object with tournaments property
-            const tournaments = Array.isArray(data) ? data : (data.tournaments || []);
-            console.log('Tournaments found:', tournaments.length);
+            const tournaments = Array.isArray(data) ? data : (data.tournaments || data.data || []);
+            console.log(`Found ${tournaments.length} tournaments`);
+            
+            if (tournaments.length > 0) {
+                console.log('First tournament:', JSON.stringify(tournaments[0], null, 2));
+            }
             
             if (tournaments.length === 0) {
                 container.innerHTML = `
