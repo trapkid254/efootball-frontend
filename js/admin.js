@@ -26,7 +26,7 @@ class AdminPanel {
     }
 
     checkAuth() {
-        // Bypass all authentication checks
+        // Set up a minimal user object for admin interface
         const devUser = { 
             _id: 'dev-admin', 
             id: 'dev-admin',
@@ -36,11 +36,24 @@ class AdminPanel {
             isAdmin: true,
             isVerified: true
         };
-        localStorage.setItem('token', 'dev-token');
-        localStorage.setItem('user', JSON.stringify(devUser));
+        
+        // Set current user without requiring login
         this.currentUser = devUser;
+        
+        // Update admin info if user is logged in, but don't require it
+        if (localStorage.getItem('user')) {
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user && user.role === 'admin') {
+                    this.currentUser = user;
+                }
+            } catch (e) {
+                console.warn('Error parsing user from localStorage:', e);
+            }
+        }
+        
         this.updateAdminInfo();
-        return true; // Always return true to indicate successful authentication
+        return true; // Always allow access to the admin interface
     }
 
     setupEventListeners() {
@@ -545,22 +558,27 @@ class AdminPanel {
 
         try {
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
-            const token = localStorage.getItem('token') || '';
+            
+            console.log('Fetching tournaments from:', `${apiBase}/api/tournaments`);
             
             const resp = await fetch(`${apiBase}/api/tournaments`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 }
             });
 
             if (!resp.ok) {
-                const errorData = await resp.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${resp.status}`);
+                const errorText = await resp.text();
+                console.error('Error response:', errorText);
+                throw new Error(`HTTP error! status: ${resp.status}`);
             }
 
             const data = await resp.json();
+            console.log('API Response:', data);
+            
+            // Handle both array and object with tournaments property
             const tournaments = Array.isArray(data) ? data : (data.tournaments || []);
+            console.log('Tournaments found:', tournaments.length);
             
             if (tournaments.length === 0) {
                 container.innerHTML = `
