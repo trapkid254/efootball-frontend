@@ -81,6 +81,19 @@ class AdminPanel {
         } else {
             console.warn('Create tournament form not found');
         }
+
+        // Edit tournament form
+        const editTournamentForm = document.getElementById('editTournamentForm');
+        if (editTournamentForm) {
+            console.log('Found edit tournament form');
+            editTournamentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Edit tournament form submitted');
+                this.handleEditTournament();
+            });
+        } else {
+            console.warn('Edit tournament form not found');
+        }
         
         // Add click handler for create tournament button
         const createTournamentBtn = document.getElementById('createTournamentBtn');
@@ -131,7 +144,7 @@ class AdminPanel {
             if (e.key === 'Escape') {
                 const modals = document.querySelectorAll('.modal');
                 modals.forEach(modal => {
-                    if (modal.style.display === 'flex') {
+                    if (modal.style.display === 'block' || modal.style.display === 'flex') {
                         modal.style.display = 'none';
                         document.body.classList.remove('modal-open');
                     }
@@ -306,7 +319,7 @@ class AdminPanel {
         container.innerHTML = '<div class="loading">Loading dashboard data...</div>';
 
         try {
-            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
             const resp = await fetch(`${apiBase}/api/admin/dashboard`);
             const data = await resp.json();
             
@@ -410,9 +423,9 @@ class AdminPanel {
             // Temporarily removing login requirement for development
             // Will be re-enabled when authentication is properly set up
 
-            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
             const token = localStorage.getItem('token') || '';
-            
+
             // Get the current user's ID from the authentication token or user object
             const user = this.currentUser || JSON.parse(localStorage.getItem('user') || '{}');
             const organizerId = user._id || user.id || 'dev-admin';
@@ -549,7 +562,7 @@ class AdminPanel {
         container.innerHTML = '<div class="loading">Loading tournaments...</div>';
 
         try {
-            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
             
             const resp = await fetch(`${apiBase}/api/admin/tournaments`);
 
@@ -634,15 +647,188 @@ class AdminPanel {
     }
 
     async editTournament(tournamentId) {
-        // For now, just show an alert. Full edit functionality can be implemented later
-        alert('Edit tournament functionality will be implemented. Tournament ID: ' + tournamentId);
+        try {
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
+            const token = localStorage.getItem('token');
+
+            // Fetch tournament data
+            const response = await fetch(`${apiBase}/api/tournaments/${tournamentId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch tournament data');
+            }
+
+            const data = await response.json();
+            const tournament = data.tournament;
+
+            // Populate edit form
+            document.getElementById('editTournamentId').value = tournament._id;
+            document.getElementById('editTournamentName').value = tournament.name || '';
+            document.getElementById('editTournamentFormat').value = tournament.format || 'knockout';
+            document.getElementById('editEntryFee').value = tournament.settings?.entryFee || tournament.entryFee || 0;
+            document.getElementById('editPrizePool').value = tournament.settings?.prizePool || tournament.prizePool || 0;
+            document.getElementById('editCapacity').value = tournament.settings?.capacity || tournament.capacity || 16;
+            document.getElementById('editStatus').value = tournament.status || 'draft';
+            document.getElementById('editDescription').value = tournament.description || '';
+            document.getElementById('editTournamentRules').value = tournament.settings?.rules || tournament.rules || '';
+
+            // Format start date for datetime-local input
+            if (tournament.schedule?.tournamentStart || tournament.startDate) {
+                const startDate = new Date(tournament.schedule?.tournamentStart || tournament.startDate);
+                const timezoneOffset = startDate.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(startDate - timezoneOffset)).toISOString().slice(0, 16);
+                document.getElementById('editStartDate').value = localISOTime;
+            }
+
+            // Show edit modal
+            this.showEditTournamentModal();
+
+        } catch (error) {
+            console.error('Error fetching tournament for edit:', error);
+            this.showNotification('Failed to load tournament data for editing', 'error');
+        }
+    }
+
+    showEditTournamentModal() {
+        const modal = document.getElementById('editTournamentModal');
+        if (!modal) {
+            console.error('Edit tournament modal not found');
+            return;
+        }
+
+        document.body.classList.add('modal-open');
+        modal.style.display = 'block';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        modal.style.zIndex = '1000';
+        modal.style.overflowY = 'auto';
+
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.margin = '20px auto';
+            modalContent.style.maxWidth = '800px';
+            modalContent.style.background = '#fff';
+            modalContent.style.padding = '20px';
+            modalContent.style.borderRadius = '8px';
+            modalContent.style.position = 'relative';
+        }
+
+        // Set up close button
+        const closeBtn = modal.querySelector('.close');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                this.hideEditTournamentModal();
+            };
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideEditTournamentModal();
+                }
+            });
+        }
+    }
+
+    hideEditTournamentModal() {
+        const modal = document.getElementById('editTournamentModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    async handleEditTournament() {
+        const editForm = document.getElementById('editTournamentForm');
+        if (!editForm) {
+            console.error('Edit tournament form not found');
+            return;
+        }
+
+        const submitBtn = editForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        }
+
+        try {
+            const formData = new FormData(editForm);
+            const tournamentId = formData.get('tournamentId');
+
+            const tournamentData = {
+                name: formData.get('name')?.trim(),
+                format: formData.get('format'),
+                status: formData.get('status'),
+                description: formData.get('description')?.trim(),
+                settings: {
+                    entryFee: parseFloat(formData.get('entryFee') || 0),
+                    prizePool: parseFloat(formData.get('prizePool') || 0),
+                    capacity: parseInt(formData.get('capacity') || 16, 10),
+                    rules: formData.get('rules')?.trim() || ''
+                },
+                schedule: {
+                    tournamentStart: formData.get('startDate') || new Date().toISOString()
+                }
+            };
+
+            console.log('Updating tournament data:', tournamentData);
+
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`${apiBase}/api/tournaments/${tournamentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(tournamentData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Update result:', result);
+
+            this.showNotification('Tournament updated successfully!', 'success');
+            this.hideEditTournamentModal();
+
+            // Reset form
+            editForm.reset();
+
+            // Refresh the tournaments list
+            this.loadTournamentsManagement();
+
+        } catch (error) {
+            console.error('Error updating tournament:', error);
+            const errorMessage = error.message || 'Failed to update tournament. Please try again.';
+            this.showNotification(errorMessage, 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        }
     }
 
     async deleteTournament(tournamentId) {
         if (!confirm('Are you sure you want to delete this tournament?')) return;
 
         try {
-            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:10000';
             const token = localStorage.getItem('token');
             const resp = await fetch(`${apiBase}/api/tournaments/${tournamentId}`, {
                 method: 'DELETE',
@@ -663,7 +849,7 @@ class AdminPanel {
 
     async verifyMatch(matchId) {
         try {
-            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:10000';
             const token = localStorage.getItem('token');
             const resp = await fetch(`${apiBase}/api/admin/matches/${matchId}/verify`, {
                 method: 'POST',
@@ -684,7 +870,7 @@ class AdminPanel {
 
     async processPayment(paymentId, action) {
         try {
-            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:10000';
             const token = localStorage.getItem('token');
             const resp = await fetch(`${apiBase}/api/admin/payments/${paymentId}/process`, {
                 method: 'POST',
@@ -848,7 +1034,7 @@ AdminPanel.prototype.loadPaymentsManagement = async function() {
     container.innerHTML = '<div class="loading">Loading payments...</div>';
 
     try {
-        const apiBase = window.API_BASE_URL || 'http://127.0.0.1:5000';
+        const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
         const token = localStorage.getItem('token') || '';
 
         const resp = await fetch(`${apiBase}/api/admin/payments`, {

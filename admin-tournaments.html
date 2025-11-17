@@ -10,7 +10,7 @@
 </head>
 <body class="dark-theme">
     <script>
-        window.API_BASE_URL = 'http://127.0.0.1:10001';
+        window.API_BASE_URL = 'http://127.0.0.1:10000';
     </script>
     <!-- Admin Navigation -->
     <nav class="navbar admin-navbar">
@@ -63,6 +63,144 @@
             </div>
         </div>
     </section>
+
+    <!-- Create Tournament Modal -->
+    <div id="createTournamentModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Tournament</h2>
+            <form id="createTournamentForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tournamentName">Tournament Name</label>
+                        <input type="text" id="tournamentName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tournamentFormat">Format</label>
+                        <select id="tournamentFormat" name="format" required>
+                            <option value="knockout">Knockout</option>
+                            <option value="group">Group Stage</option>
+                            <option value="group+knockout">Group + Knockout</option>
+                            <option value="league">League</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="entryFee">Entry Fee (KSh)</label>
+                        <input type="number" id="entryFee" name="entryFee" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="prizePool">Prize Pool (KSh)</label>
+                        <input type="number" id="prizePool" name="prizePool" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="capacity">Player Capacity</label>
+                        <input type="number" id="capacity" name="capacity" min="2" max="128" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="datetime-local" id="startDate" name="startDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="tournamentRules">Rules</label>
+                    <textarea id="tournamentRules" name="rules" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="window.adminPanel.hideCreateTournamentModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Tournament</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Tournament Modal -->
+    <div id="editTournamentModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Tournament</h2>
+            <form id="editTournamentForm">
+                <input type="hidden" id="editTournamentId" name="tournamentId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editTournamentName">Tournament Name</label>
+                        <input type="text" id="editTournamentName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTournamentFormat">Format</label>
+                        <select id="editTournamentFormat" name="format" required>
+                            <option value="knockout">Knockout</option>
+                            <option value="group">Group Stage</option>
+                            <option value="group+knockout">Group + Knockout</option>
+                            <option value="league">League</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editEntryFee">Entry Fee (KSh)</label>
+                        <input type="number" id="editEntryFee" name="entryFee" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPrizePool">Prize Pool (KSh)</label>
+                        <input type="number" id="editPrizePool" name="prizePool" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editCapacity">Player Capacity</label>
+                        <input type="number" id="editCapacity" name="capacity" min="2" max="128" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStartDate">Start Date</label>
+                        <input type="datetime-local" id="editStartDate" name="startDate" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editStatus">Status</label>
+                        <select id="editStatus" name="status" required>
+                            <option value="draft">Draft</option>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDescription">Description</label>
+                    <textarea id="editDescription" name="description" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTournamentRules">Rules</label>
+                    <textarea id="editTournamentRules" name="rules" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="window.adminPanel.hideEditTournamentModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Update Tournament</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="js/auth.js"></script>
     <script src="js/admin.js"></script>
