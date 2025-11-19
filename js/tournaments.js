@@ -155,7 +155,8 @@ class TournamentsPage {
             params.set('_t', new Date().getTime());
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const timeoutMs = 30000;
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
             try {
                 const resp = await fetch(`${apiBase}/api/tournaments?${params.toString()}`, {
@@ -211,7 +212,7 @@ class TournamentsPage {
             };
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
             try {
                 // First, try to get user's tournaments
@@ -253,11 +254,14 @@ class TournamentsPage {
             } catch (error) {
                 clearTimeout(timeoutId);
                 if (error.name === 'AbortError') {
-                    throw new Error('Request timed out. Please check your internet connection.');
+                    console.warn('Personalized tournaments request timed out, falling back to public list.');
+                    await this.loadPublicTournaments();
+                    return;
                 }
                 console.error('Error loading tournaments:', error);
                 // Fall back to public tournaments if there's an error
                 await this.loadPublicTournaments();
+                return;
             }
         } catch (error) {
             console.error('Error loading tournaments:', error);
