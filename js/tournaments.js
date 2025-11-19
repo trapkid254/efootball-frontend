@@ -20,24 +20,25 @@ class TournamentsPage {
     setupModal() {
         // Get the modal element
         this.modal = document.getElementById('tournamentDetailsModal');
-        
+        this.modalContent = document.getElementById('tournamentDetailsContent');
+
         // Get the element that closes the modal
         const closeBtn = document.querySelector('.modal .close');
-        
+
         // When the user clicks on (x), close the modal
         if (closeBtn) {
             closeBtn.onclick = () => {
                 this.hideModal();
             };
         }
-        
+
         // When the user clicks anywhere outside of the modal, close it
         window.onclick = (event) => {
             if (event.target === this.modal) {
                 this.hideModal();
             }
         };
-        
+
         // Close modal with Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.modal && this.modal.style.display === 'block') {
@@ -475,10 +476,10 @@ class TournamentsPage {
             // Add event listeners
             this.modalContent.querySelector('.join-from-details').addEventListener('click', () => {
                 this.handleJoinTournament(tournamentId);
-                this.closeModal();
+                this.hideModal();
             });
-            
-            this.modalContent.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
+
+            this.modalContent.querySelector('.close-modal').addEventListener('click', () => this.hideModal());
 
             // Show the modal
             this.modal.style.display = 'block';
@@ -689,6 +690,74 @@ showEmptyState(message, isError = false) {
     
     emptyState.style.display = 'flex';
 }
+
+    showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        // Add styles if not already added
+        if (!document.querySelector('#notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'notification-styles';
+            styles.textContent = `
+                .notification {
+                    position: fixed;
+                    top: 100px;
+                    right: 20px;
+                    background: var(--card-bg);
+                    border-left: 4px solid;
+                    border-radius: var(--border-radius);
+                    padding: 1rem 1.5rem;
+                    box-shadow: var(--shadow);
+                    z-index: 3000;
+                    animation: slideInRight 0.3s ease;
+                    max-width: 400px;
+                    border-left-color: var(--accent-color);
+                }
+                .notification-success { border-left-color: var(--success-color); }
+                .notification-error { border-left-color: var(--error-color); }
+                .notification-warning { border-left-color: var(--warning-color); }
+                .notification-info { border-left-color: var(--accent-color); }
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    color: var(--text-primary);
+                }
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+
+        document.body.appendChild(notification);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+    }
 
     getNotificationIcon(type) {
         const icons = {
