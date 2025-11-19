@@ -1,6 +1,8 @@
 class AdminPanel {
     constructor() {
         this.currentUser = null;
+        this.tournamentDetailsCache = new Map();
+        this.currentManageTournamentId = null;
         this.init();
     }
 
@@ -568,20 +570,26 @@ class AdminPanel {
 
         try {
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
-            const url = `${apiBase}/api/tournaments`;
-            
-            console.log('Fetching tournaments from:', url);
-            
-            // Add cache-busting parameter to prevent caching issues
+            const token = localStorage.getItem('token') || '';
+            const endpoint = token ? `${apiBase}/api/admin/tournaments` : `${apiBase}/api/tournaments`;
             const timestamp = new Date().getTime();
-            const resp = await fetch(`${url}?_=${timestamp}`, {
+            
+            console.log('Fetching tournaments from:', endpoint);
+
+            const headers = {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const resp = await fetch(`${endpoint}?limit=50&_=${timestamp}`, {
                 method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                },
+                headers,
                 cache: 'no-store'
             });
 
@@ -594,15 +602,10 @@ class AdminPanel {
             }
 
             const data = await resp.json();
-            console.log('API Response:', JSON.stringify(data, null, 2));
-            
-            // Handle both array and object with tournaments property
             const tournaments = Array.isArray(data) ? data : (data.tournaments || data.data || []);
-            console.log(`Found ${tournaments.length} tournaments`);
+            this.tournamentsCache = tournaments;
             
-            if (tournaments.length > 0) {
-                console.log('First tournament:', JSON.stringify(tournaments[0], null, 2));
-            }
+            console.log(`Found ${tournaments.length} tournaments`);
             
             if (tournaments.length === 0) {
                 container.innerHTML = `
@@ -614,119 +617,123 @@ class AdminPanel {
                             <i class="fas fa-plus"></i> Create Tournament
                         </button>
                     </div>`;
-            } else {
-                container.innerHTML = `
-                    <div class="section-header">
-                        <h2>Tournaments Management</h2>
-                        <button class="btn btn-primary" onclick="window.adminPanel.showCreateTournamentModal()">
-                            <i class="fas fa-plus"></i> New Tournament
-                        </button>
-                    </div>
-                    <div class="tournaments-grid">
-                        ${tournaments.map(tournament => `
-                            <div class="tournament-card card">
-                                <div class="card-header">
-                                    <h3>${tournament.name || 'Unnamed Tournament'}</h3>
-                                    <span class="badge badge-${tournament.status || 'secondary'}">
-                                        ${(tournament.status || 'draft').charAt(0).toUpperCase() + (tournament.status || 'draft').slice(1)}
-                                    </span>
-                                </div>
-                                <div class="card-body">
-                                    <div class="tournament-info">
-                                        <p><i class="fas fa-chess-king"></i> <span>Format:</span> ${tournament.format || 'N/A'}</p>
-                                        <p><i class="fas fa-users"></i> <span>Participants:</span> ${tournament.participants?.length || 0}/${tournament.capacity || tournament.settings?.capacity || 0}</p>
-                                        <p><i class="fas fa-trophy"></i> <span>Prize Pool:</span> KSh ${(tournament.prizePool || tournament.settings?.prizePool || 0).toLocaleString()}</p>
-                                        <p><i class="fas fa-ticket-alt"></i> <span>Entry Fee:</span> KSh ${(tournament.entryFee || tournament.settings?.entryFee || 0).toLocaleString()}</p>
-                                        ${tournament.startDate ? 
-                                            `<p><i class="far fa-calendar-alt"></i> <span>Starts:</span> ${new Date(tournament.startDate).toLocaleDateString()} at ${new Date(tournament.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>` 
-                                            : ''}
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="window.adminPanel.editTournament('${tournament._id}')">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="if(confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) { window.adminPanel.deleteTournament('${tournament._id}') }">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="section-header">
+                    <h2>Tournaments Management</h2>
+                    <button class="btn btn-primary" onclick="window.adminPanel.showCreateTournamentModal()">
+                        <i class="fas fa-plus"></i> New Tournament
+                    </button>
+                </div>
+                <div class="tournaments-grid">
+                    ${tournaments.map(tournament => `
+                        <div class="tournament-card card">
+                            <div class="card-header">
+                                <h3>${tournament.name || 'Unnamed Tournament'}</h3>
+                                <span class="badge badge-${tournament.status || 'secondary'}">
+                                    ${(tournament.status || 'draft').charAt(0).toUpperCase() + (tournament.status || 'draft').slice(1)}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="tournament-info">
+                                    <p><i class="fas fa-chess-king"></i> <span>Format:</span> ${tournament.format || 'N/A'}</p>
+                                    <p><i class="fas fa-users"></i> <span>Participants:</span> ${tournament.participants?.length || 0}/${tournament.capacity || tournament.settings?.capacity || 0}</p>
+                                    <p><i class="fas fa-trophy"></i> <span>Prize Pool:</span> KSh ${(tournament.prizePool || tournament.settings?.prizePool || 0).toLocaleString()}</p>
+                                    <p><i class="fas fa-ticket-alt"></i> <span>Entry Fee:</span> KSh ${(tournament.entryFee || tournament.settings?.entryFee || 0).toLocaleString()}</p>
+                                    ${(tournament.schedule?.tournamentStart || tournament.startDate) ? 
+                                        `<p><i class="far fa-calendar-alt"></i> <span>Starts:</span> ${new Date(tournament.schedule?.tournamentStart || tournament.startDate).toLocaleDateString()} at ${new Date(tournament.schedule?.tournamentStart || tournament.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>` 
+                                        : ''}
                                 </div>
                             </div>
-                        `).join('')}
-                    </div>
-                    <style>
-                        .tournaments-grid {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                            gap: 1.5rem;
-                            margin-top: 1.5rem;
-                        }
-                        .tournament-card {
-                            display: flex;
-                            flex-direction: column;
-                            height: 100%;
-                            transition: transform 0.2s, box-shadow 0.2s;
-                        }
-                        .tournament-card:hover {
-                            transform: translateY(-5px);
-                            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                        }
-                        .card-header {
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: flex-start;
-                            padding: 1.25rem 1.25rem 0.75rem;
-                        }
-                        .card-header h3 {
-                            margin: 0;
-                            font-size: 1.25rem;
-                            font-weight: 600;
-                            color: var(--text-primary);
-                        }
-                        .card-body {
-                            padding: 0 1.25rem 1.25rem;
-                            flex-grow: 1;
-                        }
-                        .tournament-info p {
-                            margin: 0.5rem 0;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.5rem;
-                        }
-                        .tournament-info i {
-                            width: 1.25rem;
-                            text-align: center;
-                            color: var(--primary-color);
-                        }
-                        .tournament-info span {
-                            font-weight: 500;
-                            color: var(--text-secondary);
-                            min-width: 90px;
-                            display: inline-block;
-                        }
-                        .card-footer {
-                            display: flex;
-                            gap: 0.5rem;
-                            padding: 0.75rem 1.25rem;
-                            background-color: var(--bg-secondary);
-                            border-top: 1px solid var(--border-color);
-                            border-bottom-left-radius: 0.5rem;
-                            border-bottom-right-radius: 0.5rem;
-                        }
-                        .badge {
-                            padding: 0.25rem 0.6rem;
-                            border-radius: 20px;
-                            font-size: 0.75rem;
-                            font-weight: 600;
-                            text-transform: capitalize;
-                        }
-                        .badge-draft { background-color: #6c757d; color: white; }
-                        .badge-upcoming { background-color: #17a2b8; color: white; }
-                        .badge-active { background-color: #28a745; color: white; }
-                        .badge-completed { background-color: #6f42c1; color: white; }
-                        .badge-cancelled { background-color: #dc3545; color: white; }
-                    </style>`;
-            }
+                            <div class="card-footer">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="window.adminPanel.manageTournament('${tournament._id}')">
+                                    <i class="fas fa-cogs"></i> Manage
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="window.adminPanel.editTournament('${tournament._id}')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="if(confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) { window.adminPanel.deleteTournament('${tournament._id}') }">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <style>
+                    .tournaments-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                        gap: 1.5rem;
+                        margin-top: 1.5rem;
+                    }
+                    .tournament-card {
+                        display: flex;
+                        flex-direction: column;
+                        height: 100%;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    }
+                    .tournament-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    }
+                    .card-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        padding: 1.25rem 1.25rem 0.75rem;
+                    }
+                    .card-header h3 {
+                        margin: 0;
+                        font-size: 1.25rem;
+                        font-weight: 600;
+                        color: var(--text-primary);
+                    }
+                    .card-body {
+                        padding: 0 1.25rem 1.25rem;
+                        flex-grow: 1;
+                    }
+                    .tournament-info p {
+                        margin: 0.5rem 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .tournament-info i {
+                        width: 1.25rem;
+                        text-align: center;
+                        color: var(--primary-color);
+                    }
+                    .tournament-info span {
+                        font-weight: 500;
+                        color: var(--text-secondary);
+                        min-width: 90px;
+                        display: inline-block;
+                    }
+                    .card-footer {
+                        display: flex;
+                        gap: 0.5rem;
+                        padding: 0.75rem 1.25rem;
+                        background-color: var(--bg-secondary);
+                        border-top: 1px solid var(--border-color);
+                        border-bottom-left-radius: 0.5rem;
+                        border-bottom-right-radius: 0.5rem;
+                    }
+                    .badge {
+                        padding: 0.25rem 0.6rem;
+                        border-radius: 20px;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        text-transform: capitalize;
+                    }
+                    .badge-draft { background-color: #6c757d; color: white; }
+                    .badge-upcoming { background-color: #17a2b8; color: white; }
+                    .badge-active { background-color: #28a745; color: white; }
+                    .badge-completed { background-color: #6f42c1; color: white; }
+                    .badge-cancelled { background-color: #dc3545; color: white; }
+                </style>`;
         } catch (error) {
             console.error('Error loading tournaments:', error);
             container.innerHTML = `
@@ -744,6 +751,349 @@ class AdminPanel {
                     </div>
                 </div>`;
         }
+    }
+
+    async manageTournament(tournamentId) {
+        console.log('Opening management modal for tournament:', tournamentId);
+        this.currentManageTournamentId = tournamentId;
+
+        const content = document.getElementById('manageTournamentContent');
+        if (!content) {
+            console.error('Manage tournament content container missing');
+            return;
+        }
+
+        this.showManageTournamentModal();
+        content.innerHTML = `
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading tournament details...</span>
+            </div>`;
+
+        try {
+            const data = await this.fetchTournamentDetails(tournamentId);
+            this.tournamentDetailsCache.set(tournamentId, data);
+            this.renderManageTournament(data);
+        } catch (error) {
+            console.error('Failed to load tournament details:', error);
+            content.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h3>Unable to load tournament details</h3>
+                    <p>${error.message || 'Please try again.'}</p>
+                    <button class="btn btn-primary" id="retryManageTournament">
+                        <i class="fas fa-sync"></i> Retry
+                    </button>
+                </div>`;
+
+            document.getElementById('retryManageTournament')?.addEventListener('click', () => {
+                this.manageTournament(tournamentId);
+            });
+        }
+    }
+
+    async fetchTournamentDetails(tournamentId) {
+        const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
+        const token = localStorage.getItem('token') || '';
+        const headers = {
+            'Accept': 'application/json'
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const resp = await fetch(`${apiBase}/api/admin/tournaments/${tournamentId}`, {
+            headers
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `Failed to load tournament (${resp.status})`);
+        }
+
+        return resp.json();
+    }
+
+    renderManageTournament(details) {
+        const content = document.getElementById('manageTournamentContent');
+        if (!content) return;
+
+        const { tournament, matches = [] } = details;
+        const participants = tournament.participants || [];
+        const tournamentStatus = tournament.status || 'draft';
+        const playerName = (participant) => participant?.player?.efootballId || participant?.player?.profile?.displayName || 'Player';
+        const userName = (matchPlayer, fallback) => matchPlayer?.user?.efootballId || matchPlayer?.user?.profile?.displayName || fallback;
+
+        content.innerHTML = `
+            <div class="manage-header">
+                <div>
+                    <h2>${tournament.name}</h2>
+                    <p>${tournament.description || ''}</p>
+                </div>
+                <div class="manage-actions">
+                    <button class="btn btn-outline-secondary" id="refreshManageTournament">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <button class="btn btn-secondary" id="closeManageTournament">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+            <div class="manage-summary">
+                <div>
+                    <label>Status</label>
+                    <span class="badge badge-${tournamentStatus}">${tournamentStatus}</span>
+                </div>
+                <div>
+                    <label>Format</label>
+                    <span>${tournament.format || 'N/A'}</span>
+                </div>
+                <div>
+                    <label>Capacity</label>
+                    <span>${tournament.settings?.capacity || tournament.capacity || 0}</span>
+                </div>
+                <div>
+                    <label>Participants</label>
+                    <span>${participants.length}</span>
+                </div>
+                <div>
+                    <label>Prize Pool</label>
+                    <span>KSh ${(tournament.settings?.prizePool || tournament.prizePool || 0).toLocaleString()}</span>
+                </div>
+            </div>
+            <div class="manage-grid">
+                <div class="manage-card">
+                    <h3>Participants (${participants.length})</h3>
+                    ${participants.length ? `
+                        <ul class="participants-list" id="manageParticipantsList">
+                            ${participants.map(participant => `
+                                <li data-participant-id="${participant.player?._id || participant._id}">
+                                    <div class="participant-meta">
+                                        <span>${playerName(participant)}</span>
+                                        <small>Status: ${participant.status}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger remove-participant">
+                                        <i class="fas fa-user-slash"></i>
+                                    </button>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : `
+                        <div class="participants-empty">
+                            <i class="fas fa-users"></i>
+                            <p>No participants registered yet.</p>
+                        </div>
+                    `}
+                </div>
+                <div class="manage-card">
+                    <h3>Matches (${matches.length})</h3>
+                    ${matches.length ? `
+                        <div class="matches-list">
+                            ${matches.map(match => `
+                                <div class="match-card" data-match-id="${match._id}">
+                                    <header>
+                                        <div>
+                                            <strong>${match.displayName || `Match ${match.matchNumber}`}</strong>
+                                        </div>
+                                        <span class="badge badge-${match.status || 'scheduled'}">
+                                            ${(match.status || 'scheduled').replace('_', ' ')}
+                                        </span>
+                                    </header>
+                                    <div class="match-players">
+                                        <span>${userName(match.player1, 'Player 1')}</span>
+                                        <span>${userName(match.player2, 'Player 2')}</span>
+                                    </div>
+                                    <div class="match-inputs">
+                                        <label>${userName(match.player1, 'Player 1')}
+                                            <input type="number" data-score="player1" min="0" value="${match.player1?.score ?? ''}">
+                                        </label>
+                                        <label>${userName(match.player2, 'Player 2')}
+                                            <input type="number" data-score="player2" min="0" value="${match.player2?.score ?? ''}">
+                                        </label>
+                                    </div>
+                                    <textarea class="match-notes" data-notes placeholder="Admin notes (optional)">${match.adminNotes || ''}</textarea>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button class="btn btn-sm btn-outline-secondary reset-match">
+                                            <i class="fas fa-undo"></i> Reset
+                                        </button>
+                                        <button class="btn btn-sm btn-primary save-result">
+                                            <i class="fas fa-save"></i> Save Result
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="matches-empty">
+                            <i class="fas fa-brackets-curly"></i>
+                            <p>No fixtures have been generated for this tournament yet.</p>
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('refreshManageTournament')?.addEventListener('click', () => {
+            this.manageTournament(tournament._id);
+        });
+        document.getElementById('closeManageTournament')?.addEventListener('click', () => {
+            this.hideManageTournamentModal();
+        });
+
+        this.attachParticipantActions(tournament._id);
+        this.attachMatchActions();
+    }
+
+    attachParticipantActions(tournamentId) {
+        const list = document.getElementById('manageParticipantsList');
+        if (!list) return;
+
+        list.querySelectorAll('.remove-participant').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const participantId = e.currentTarget.closest('li')?.dataset.participantId;
+                if (participantId) {
+                    this.removeParticipant(tournamentId, participantId);
+                }
+            });
+        });
+    }
+
+    attachMatchActions() {
+        const content = document.getElementById('manageTournamentContent');
+        if (!content) return;
+
+        content.querySelectorAll('.match-card').forEach(card => {
+            const matchId = card.dataset.matchId;
+            if (!matchId) return;
+
+            card.querySelector('.reset-match')?.addEventListener('click', () => {
+                card.querySelectorAll('input[data-score]').forEach(input => input.value = '');
+                const notes = card.querySelector('[data-notes]');
+                if (notes) notes.value = '';
+            });
+
+            card.querySelector('.save-result')?.addEventListener('click', () => {
+                const player1Score = card.querySelector('[data-score="player1"]')?.value;
+                const player2Score = card.querySelector('[data-score="player2"]')?.value;
+                const notes = card.querySelector('[data-notes]')?.value || '';
+
+                if (player1Score === '' || player2Score === '') {
+                    this.showNotification('Please enter scores for both players', 'warning');
+                    return;
+                }
+
+                this.saveMatchResult(matchId, player1Score, player2Score, notes);
+            });
+        });
+    }
+
+    async removeParticipant(tournamentId, participantId) {
+        if (!confirm('Remove this participant from the tournament?')) return;
+
+        try {
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
+            const token = localStorage.getItem('token') || '';
+            const headers = {
+                'Accept': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const resp = await fetch(`${apiBase}/api/admin/tournaments/${tournamentId}/participants/${participantId}`, {
+                method: 'DELETE',
+                headers
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.message || 'Failed to remove participant');
+            }
+
+            const data = await resp.json();
+            this.showNotification(data.message || 'Participant removed', 'success');
+
+            const cached = this.tournamentDetailsCache.get(tournamentId) || {};
+            cached.tournament = data.tournament;
+            this.tournamentDetailsCache.set(tournamentId, cached);
+            this.renderManageTournament({ ...cached, tournament: data.tournament });
+            this.loadTournamentsManagement();
+        } catch (error) {
+            console.error('Remove participant error:', error);
+            this.showNotification(error.message || 'Failed to remove participant', 'error');
+        }
+    }
+
+    async saveMatchResult(matchId, player1Score, player2Score, notes = '') {
+        try {
+            const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
+            const token = localStorage.getItem('token') || '';
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const payload = {
+                player1Score: parseInt(player1Score, 10),
+                player2Score: parseInt(player2Score, 10),
+                notes
+            };
+
+            const resp = await fetch(`${apiBase}/api/admin/matches/${matchId}/result`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.message || 'Failed to save result');
+            }
+
+            const data = await resp.json();
+            this.showNotification('Match result saved successfully', 'success');
+
+            const cache = this.tournamentDetailsCache.get(this.currentManageTournamentId);
+            if (cache) {
+                const matchIndex = cache.matches?.findIndex(m => m._id === matchId);
+                if (matchIndex > -1) {
+                    cache.matches[matchIndex] = data.match;
+                    this.tournamentDetailsCache.set(this.currentManageTournamentId, cache);
+                    this.renderManageTournament(cache);
+                }
+            }
+        } catch (error) {
+            console.error('Save match result error:', error);
+            this.showNotification(error.message || 'Failed to save result', 'error');
+        }
+    }
+
+    showManageTournamentModal() {
+        const modal = document.getElementById('manageTournamentModal');
+        if (!modal) return;
+
+        document.body.classList.add('modal-open');
+        modal.style.display = 'block';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        modal.style.zIndex = '1000';
+        modal.style.overflowY = 'auto';
+    }
+
+    hideManageTournamentModal() {
+        const modal = document.getElementById('manageTournamentModal');
+        if (!modal) return;
+
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
     }
 
 // loadPaymentsManagement was moved to the prototype below to avoid parser errors in some environments

@@ -238,6 +238,173 @@
         </div>
     </div>
 
+    <!-- Manage Tournament Modal -->
+    <div id="manageTournamentModal" class="modal">
+        <div class="modal-content manage-modal">
+            <span class="close">&times;</span>
+            <div id="manageTournamentContent" class="manage-content">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Select a tournament to manage.</span>
+                </div>
+            </div>
+        </div>
+        <style>
+            .manage-modal {
+                max-width: 1100px;
+            }
+            .manage-content {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .manage-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+            .manage-actions {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+            .manage-summary {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+            .manage-summary div {
+                background: var(--bg-primary);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 0.5rem 0.75rem;
+                min-width: 130px;
+            }
+            .manage-summary label {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .manage-summary span {
+                font-size: 1rem;
+                font-weight: 600;
+                display: block;
+                margin-top: 0.15rem;
+            }
+            .manage-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 1.5rem;
+            }
+            .manage-card {
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 1rem;
+                background: var(--bg-secondary);
+            }
+            .manage-card h3 {
+                margin-top: 0;
+                margin-bottom: 0.75rem;
+            }
+            .participants-list {
+                max-height: 360px;
+                overflow-y: auto;
+                padding-right: 0.5rem;
+            }
+            .participants-list li {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .participants-empty,
+            .matches-empty {
+                text-align: center;
+                padding: 2rem 1rem;
+                color: var(--text-secondary);
+            }
+            .participant-meta {
+                display: flex;
+                flex-direction: column;
+            }
+            .participant-meta span {
+                font-weight: 600;
+            }
+            .participant-meta small {
+                color: var(--text-secondary);
+            }
+            .matches-list {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                max-height: 420px;
+                overflow-y: auto;
+                padding-right: 0.5rem;
+            }
+            .match-card {
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 0.75rem;
+                background: var(--bg-primary);
+            }
+            .match-card header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.75rem;
+            }
+            .match-players {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.75rem;
+                font-weight: 600;
+            }
+            .match-inputs {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+            .match-inputs label {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                font-size: 0.85rem;
+            }
+            .match-inputs input,
+            .match-inputs textarea {
+                width: 100%;
+            }
+            .match-notes {
+                width: 100%;
+                min-height: 70px;
+                resize: vertical;
+                border-radius: 6px;
+                border: 1px solid var(--border-color);
+                padding: 0.5rem;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                margin-bottom: 0.75rem;
+            }
+            .badge-scheduled {
+                background-color: #6c757d;
+                color: #fff;
+            }
+            .badge-in_progress {
+                background-color: #17a2b8;
+                color: #fff;
+            }
+            .badge-disputed {
+                background-color: #ffc107;
+                color: #1f1f1f;
+            }
+        </style>
+    </div>
+
     <script src="js/auth.js"></script>
     <script src="js/admin.js"></script>
 </body>
