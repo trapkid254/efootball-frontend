@@ -225,6 +225,15 @@ class TournamentsPage {
 
                 // Handle my tournaments response
                 if (!myTournamentsResp.ok) {
+                    if (myTournamentsResp.status === 401) {
+                        // Token is invalid, clear it and fall back to public tournaments
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        this.currentUser = null;
+                        this.updateAuthButton();
+                        await this.loadPublicTournaments();
+                        return;
+                    }
                     throw new Error(`Failed to fetch your tournaments: ${myTournamentsResp.status}`);
                 }
                 
@@ -236,6 +245,14 @@ class TournamentsPage {
                 if (availableResp.ok) {
                     const availableData = await availableResp.json();
                     availableTournaments = availableData.tournaments || [];
+                } else if (availableResp.status === 401) {
+                    // Token is invalid, clear it and fall back to public tournaments
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    this.currentUser = null;
+                    this.updateAuthButton();
+                    await this.loadPublicTournaments();
+                    return;
                 }
                 
                 // Combine both lists, marking which ones the user is registered for
