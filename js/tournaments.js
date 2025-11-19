@@ -50,13 +50,15 @@ class TournamentsPage {
     showModal() {
         if (this.modal) {
             this.modal.style.display = 'block';
+            this.modal.classList.add('show');
             document.body.style.overflow = 'hidden';
         }
     }
-    
+
     hideModal() {
         if (this.modal) {
             this.modal.style.display = 'none';
+            this.modal.classList.remove('show');
             document.body.style.overflow = '';
         }
     }
@@ -482,8 +484,7 @@ class TournamentsPage {
             this.modalContent.querySelector('.close-modal').addEventListener('click', () => this.hideModal());
 
             // Show the modal
-            this.modal.style.display = 'block';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+            this.showModal();
 
         } catch (error) {
             console.error('Error loading tournament details:', error);
