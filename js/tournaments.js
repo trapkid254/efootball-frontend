@@ -301,12 +301,14 @@ class TournamentsPage {
             const isFull = participants >= maxParticipants;
             const isUpcoming = tournament.status === 'upcoming' || tournament.status === 'registration';
             const canJoin = isUpcoming && !isFull;
-            const entryFee = tournament.entryFee || tournament.settings?.entryFee || 0;
+            const entryFee = tournament.entryFee ?? tournament.settings?.entryFee ?? 0;
+            const prizePool = tournament.prizePool ?? tournament.settings?.prizePool ?? 0;
+            const startDate = tournament.schedule?.tournamentStart || tournament.startDate || Date.now();
             
             return `
             <div class="tournament-card" data-status="${tournament.status}" data-format="${tournament.format}" data-fee="${entryFee === 0 ? 'free' : 'paid'}">
                 <div class="tournament-header">
-                    <span class="tournament-prize">KSh ${(tournament.prizePool || tournament.settings?.prizePool || 0).toLocaleString()}</span>
+                    <span class="tournament-prize">KSh ${prizePool.toLocaleString()}</span>
                     <span class="tournament-status ${tournament.status}">${tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}</span>
                 </div>
                 <div class="tournament-info">
@@ -317,8 +319,9 @@ class TournamentsPage {
                             <i class="fas fa-users"></i> ${participants}/${maxParticipants}
                             ${isFull ? '<span class="badge-full">FULL</span>' : ''}
                         </span>
-                        <span><i class="fas fa-calendar"></i> ${new Date(tournament.schedule?.tournamentStart || tournament.startDate || Date.now()).toLocaleDateString()}</span>
+                        <span><i class="fas fa-calendar"></i> ${new Date(startDate).toLocaleDateString()}</span>
                         <span><i class="fas fa-trophy"></i> ${tournament.format || 'N/A'}</span>
+                        <span><i class="fas fa-ticket-alt"></i> ${entryFee > 0 ? `Entry: KSh ${entryFee.toLocaleString()}` : 'Free Entry'}</span>
                     </div>
                     <div class="tournament-actions">
                         <button class="btn-secondary view-details" data-id="${tournament._id}">
@@ -397,6 +400,9 @@ class TournamentsPage {
                 return;
             }
 
+            const entryFee = tournament.entryFee ?? tournament.settings?.entryFee ?? 0;
+            const rules = tournament.settings?.rules || tournament.rules || 'Standard Efootball rules apply';
+
             this.modalContent.innerHTML = `
                 <div class="tournament-details">
                     <div class="details-header">
@@ -422,7 +428,7 @@ class TournamentsPage {
                         </div>
                         <div class="detail-item">
                             <label><i class="fas fa-money-bill-wave"></i> Entry Fee</label>
-                            <span>${(tournament.entryFee || tournament.settings?.entryFee || 0) > 0 ? `KSh ${(tournament.entryFee || tournament.settings?.entryFee)}` : 'Free'}</span>
+                            <span>${entryFee > 0 ? `KSh ${entryFee.toLocaleString()}` : 'Free'}</span>
                         </div>
                     </div>
                     
@@ -433,13 +439,13 @@ class TournamentsPage {
                     
                     <div class="details-section">
                         <h3>Tournament Rules</h3>
-                        <p>${tournament.rules || ''}</p>
+                        <p>${rules}</p>
                     </div>
                     
                     <div class="details-actions">
                         <button class="btn-secondary close-modal">Close</button>
                         <button class="btn-primary join-from-details" data-id="${tournament._id}">
-                            ${(tournament.entryFee || tournament.settings?.entryFee || 0) > 0 ? `Join Tournament - KSh ${(tournament.entryFee || tournament.settings?.entryFee)}` : 'Join Tournament Free'}
+                            ${entryFee > 0 ? `Join Tournament - KSh ${entryFee.toLocaleString()}` : 'Join Tournament Free'}
                         </button>
                     </div>
                 </div>
@@ -476,6 +482,12 @@ class TournamentsPage {
             const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
             const token = localStorage.getItem('token');
             
+            if (!token) {
+                this.showNotification('Please login again to continue.', 'warning');
+                setTimeout(() => window.location.href = 'index.html#login', 800);
+                return;
+            }
+            
             // First, get the latest tournament data to check capacity
             const tournamentResp = await fetch(`${apiBase}/api/tournaments/${tournamentId}`);
             const tournamentData = await tournamentResp.json();
@@ -487,10 +499,19 @@ class TournamentsPage {
             const tournament = tournamentData.tournament;
             const currentParticipants = tournament.participants?.length || 0;
             const maxParticipants = tournament.capacity || tournament.settings?.capacity || 0;
+            const entryFee = tournament.entryFee ?? tournament.settings?.entryFee ?? 0;
 
             // Check if tournament is full
             if (currentParticipants >= maxParticipants) {
                 throw new Error('This tournament is already full');
+            }
+
+            if (entryFee > 0) {
+                const confirmed = this.promptPaymentInstructions(entryFee);
+                if (!confirmed) {
+                    this.showNotification('Payment is required to join this tournament.', 'warning');
+                    return;
+                }
             }
 
             // If not full, proceed with joining
@@ -521,180 +542,14 @@ class TournamentsPage {
         }
     }
 
-    filterTournaments(tournaments) {
-    return tournaments.filter(tournament => {
-        // Status filter
-        if (this.filters.status !== 'all' && tournament.status !== this.filters.status) {
-            return false;
-        }
-        
-        // Format filter
-        if (this.filters.format !== 'all' && tournament.format !== this.filters.format) {
-            return false;
-        }
-        
-        // Fee filter
-        if (this.filters.fee === 'free' && (tournament.entryFee || tournament.settings?.entryFee || 0) > 0) {
-            return false;
-        }
-        if (this.filters.fee === 'paid' && (tournament.entryFee || tournament.settings?.entryFee || 0) === 0) {
-            return false;
-        }
-        
-        return true;
-    });
-}
-
-attachTournamentEventListeners() {
-    // View details buttons
-    document.querySelectorAll('.view-details').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const tournamentId = e.target.closest('.view-details').dataset.id;
-            this.showTournamentDetails(tournamentId);
-        });
-    });
-
-    // Join tournament buttons
-    document.querySelectorAll('.join-tournament').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const tournamentId = e.target.closest('.join-tournament').dataset.id;
-            this.handleJoinTournament(tournamentId);
-        });
-    });
-}
-
-async showTournamentDetails(tournamentId) {
-    try {
-        const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
-        const resp = await fetch(`${apiBase}/api/tournaments/${tournamentId}`);
-        const data = await resp.json();
-        if (!resp.ok || !data.success) throw new Error(data.message || 'Failed to fetch tournament');
-        const tournament = data.tournament;
-        
-        if (!tournament) {
-            this.showNotification('Tournament not found', 'error');
-            return;
-        }
-
-        const modal = document.getElementById('tournamentDetailsModal');
-        const content = document.getElementById('tournamentDetailsContent');
-        
-        content.innerHTML = `
-            <div class="tournament-details">
-                <div class="details-header">
-                    <h2>${tournament.name}</h2>
-                    <div class="details-meta">
-                        <span class="status-badge status-${tournament.status}">${tournament.status}</span>
-                        <span class="prize-badge">KSh ${(tournament.prizePool || tournament.settings?.prizePool || 0).toLocaleString()} Prize Pool</span>
-                    </div>
-                </div>
-                
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <label><i class="fas fa-calendar"></i> Start Date</label>
-                        <span>${new Date(tournament.schedule?.tournamentStart || tournament.startDate || Date.now()).toLocaleDateString()}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label><i class="fas fa-users"></i> Participants</label>
-                        <span>${(tournament.participants?.length||0)}/${tournament.capacity || tournament.settings?.capacity || 0}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label><i class="fas fa-trophy"></i> Format</label>
-                        <span>${tournament.format}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label><i class="fas fa-money-bill-wave"></i> Entry Fee</label>
-                        <span>${(tournament.entryFee || tournament.settings?.entryFee || 0) > 0 ? `KSh ${(tournament.entryFee || tournament.settings?.entryFee)}` : 'Free'}</span>
-                    </div>
-                </div>
-                
-                <div class="details-section">
-                    <h3>Description</h3>
-                    <p>${tournament.description || ''}</p>
-                </div>
-                
-                <div class="details-section">
-                    <h3>Tournament Rules</h3>
-                    <p>${tournament.rules || ''}</p>
-                </div>
-                
-                <div class="details-actions">
-                    <button class="btn-secondary" onclick="this.closest('.modal').style.display='none'">Close</button>
-                    <button class="btn-primary join-from-details" data-id="${tournament._id}">
-                        ${(tournament.entryFee || tournament.settings?.entryFee || 0) > 0 ? `Join Tournament - KSh ${(tournament.entryFee || tournament.settings?.entryFee)}` : 'Join Tournament Free'}
-                    </button>
-                </div>
-            </div>
-        `;
-
-        // Add event listener to join button in modal
-        content.querySelector('.join-from-details').addEventListener('click', (e) => {
-            this.handleJoinTournament(tournamentId);
-            modal.style.display = 'none';
-        });
-
-        modal.style.display = 'block';
-
-    } catch (error) {
-        console.error('Error loading tournament details:', error);
-        this.showNotification('Failed to load tournament details', 'error');
+    promptPaymentInstructions(amount) {
+        const formattedAmount = Number(amount || 0).toLocaleString();
+        const message = `This tournament requires an entry fee of KSh ${formattedAmount}.\n\n` +
+            `Please send the payment via M-PESA to 0714003218 before continuing.\n` +
+            `Tap OK once you've completed the payment to finish your registration.`;
+        return window.confirm(message);
     }
-}
 
-async handleJoinTournament(tournamentId) {
-    try {
-        const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            this.showNotification('Please log in to join tournaments', 'error');
-            return;
-        }
-
-        // First, get the latest tournament data to check capacity
-        const tournamentResp = await fetch(`${apiBase}/api/tournaments/${tournamentId}`);
-        const tournamentData = await tournamentResp.json();
-        
-        if (!tournamentResp.ok || !tournamentData.success) {
-            throw new Error('Failed to fetch tournament details');
-        }
-
-        const tournament = tournamentData.tournament;
-        const currentParticipants = tournament.participants?.length || 0;
-        const maxParticipants = tournament.capacity || tournament.settings?.capacity || 0;
-
-        // Check if tournament is full
-        if (currentParticipants >= maxParticipants) {
-            throw new Error('This tournament is already full');
-        }
-
-        // If not full, proceed with joining
-        const joinResp = await fetch(`${apiBase}/api/tournaments/${tournamentId}/join`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const data = await joinResp.json();
-        
-        if (!joinResp.ok) {
-            throw new Error(data.message || 'Failed to join tournament');
-        }
-
-        this.showNotification('Successfully joined the tournament!', 'success');
-        this.loadTournaments(); // Refresh the list
-    } catch (error) {
-        console.error('Error joining tournament:', error);
-        this.showNotification(error.message || 'Failed to join tournament', 'error');
-        
-        // If the error is because the tournament is full, refresh the list to update UI
-        if (error.message.includes('full')) {
-            this.loadTournaments();
-        }
-    }
-}
 
 renderPagination(totalItems) {
     const totalPages = Math.ceil(totalItems / this.itemsPerPage);

@@ -570,11 +570,11 @@ class AdminPanel {
 
         try {
             const apiBase = window.API_BASE_URL || 'http://127.0.0.1:10000';
-            const token = localStorage.getItem('token') || '';
-            const endpoint = token ? `${apiBase}/api/admin/tournaments` : `${apiBase}/api/tournaments`;
+            const adminEndpoint = `${apiBase}/api/admin/tournaments`;
+            const publicEndpoint = `${apiBase}/api/tournaments`;
             const timestamp = new Date().getTime();
             
-            console.log('Fetching tournaments from:', endpoint);
+            console.log('Fetching tournaments from admin endpoint:', adminEndpoint);
 
             const headers = {
                 'Accept': 'application/json',
@@ -583,15 +583,27 @@ class AdminPanel {
                 'Expires': '0'
             };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+            let resp;
+            try {
+                resp = await fetch(`${adminEndpoint}?limit=50&_=${timestamp}`, {
+                    method: 'GET',
+                    headers,
+                    cache: 'no-store'
+                });
+            } catch (adminError) {
+                console.warn('Admin endpoint unreachable, falling back to public tournaments:', adminError.message);
             }
 
-            const resp = await fetch(`${endpoint}?limit=50&_=${timestamp}`, {
-                method: 'GET',
-                headers,
-                cache: 'no-store'
-            });
+            if (!resp || !resp.ok) {
+                if (resp) {
+                    console.warn(`Admin endpoint responded with status ${resp.status}, using public tournaments instead.`);
+                }
+                resp = await fetch(`${publicEndpoint}?limit=50&_=${timestamp}`, {
+                    method: 'GET',
+                    headers,
+                    cache: 'no-store'
+                });
+            }
 
             console.log('Response status:', resp.status);
             
