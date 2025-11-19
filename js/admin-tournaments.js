@@ -236,18 +236,46 @@ class AdminTournamentsPage {
     }
 
     manageTournament(tournamentId) {
-        // For now, show an alert
-        alert(`Manage tournament ${tournamentId} - Feature coming soon!`);
+        // Redirect to a manage page or show modal
+        // For now, we'll redirect to a manage URL
+        window.location.href = `admin-manage-tournament.html?id=${tournamentId}`;
     }
 
     editTournament(tournamentId) {
-        // For now, show an alert
-        alert(`Edit tournament ${tournamentId} - Feature coming soon!`);
+        // Redirect to edit page
+        window.location.href = `admin-edit-tournament.html?id=${tournamentId}`;
     }
 
-    deleteTournament(tournamentId) {
-        // For now, show an alert
-        alert(`Delete tournament ${tournamentId} - Feature coming soon!`);
+    async deleteTournament(tournamentId) {
+        if (!confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`${apiBase}/api/tournaments/${tournamentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Failed to delete tournament (${response.status})`);
+            }
+
+            this.showNotification('Tournament deleted successfully!', 'success');
+            // Reload tournaments list
+            this.loadTournaments();
+
+        } catch (error) {
+            console.error('Error deleting tournament:', error);
+            this.showNotification(error.message || 'Failed to delete tournament', 'error');
+        }
     }
 
     showNotification(message, type = 'info') {
