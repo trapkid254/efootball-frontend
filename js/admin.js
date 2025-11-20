@@ -479,15 +479,18 @@ class AdminPanel {
                 name: tournamentData.name,
                 description: tournamentData.description,
                 format: tournamentData.format,
-                startDate: tournamentData.startDate,
                 organizer: organizerId,  // Include organizer ID in the request body
+                schedule: {
+                    tournamentStart: tournamentData.startDate
+                },
                 settings: {
                     prizePool: tournamentData.prizePool,
                     capacity: tournamentData.capacity,
                     entryFee: tournamentData.entryFee,
                     rules: tournamentData.rules
                 },
-                status: 'upcoming'
+                status: 'upcoming',
+                isPublic: true
             };
 
             const response = await fetch(`${apiBase}/api/tournaments`, {
@@ -1239,15 +1242,16 @@ class AdminPanel {
                 format: formData.get('format'),
                 status: formData.get('status'),
                 description: formData.get('description')?.trim(),
+                schedule: {
+                    tournamentStart: formData.get('startDate') || new Date().toISOString()
+                },
                 settings: {
                     entryFee: parseFloat(formData.get('entryFee') || 0),
                     prizePool: parseFloat(formData.get('prizePool') || 0),
                     capacity: parseInt(formData.get('capacity') || 16, 10),
                     rules: formData.get('rules')?.trim() || ''
                 },
-                schedule: {
-                    tournamentStart: formData.get('startDate') || new Date().toISOString()
-                }
+                isPublic: true
             };
 
             console.log('Updating tournament data:', tournamentData);
