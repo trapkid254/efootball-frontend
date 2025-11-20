@@ -273,82 +273,120 @@ class AdminTournamentsPage {
             this.loadTournaments();
 
         } catch (error) {
-            console.error('Error deleting tournament:', error);
-            this.showNotification(error.message || 'Failed to delete tournament', 'error');
-        }
-    }
-
-    showNotification(message, type = 'info') {
-        // Remove existing notifications
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
-        }
-
-        // Add styles if not already added
-        if (!document.querySelector('#notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'notification-styles';
-            styles.textContent = `
-                .notification {
-                    position: fixed;
-                    top: 100px;
-                    right: 20px;
-                    background: #fff;
-                    border-left: 4px solid;
-                    border-radius: 8px;
-                    padding: 1rem 1.5rem;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 3000;
-                    animation: slideInRight 0.3s ease;
-                    max-width: 400px;
-                    border-left-color: #007bff;
-                }
-                .notification-success { border-left-color: #28a745; }
-                .notification-error { border-left-color: #dc3545; }
-                .notification-warning { border-left-color: #ffc107; }
-                .notification-info { border-left-color: #007bff; }
-                .notification-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    color: #333;
-                }
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOutRight {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
-                <span>${message}</span>
             </div>
-        `;
+        `).join('')}
+    </div>
+    <style>
+        .tournaments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .tournament-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tournament-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1.25rem 1.25rem 0.75rem;
+        }
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .card-body {
+            padding: 0 1.25rem 1.25rem;
+            flex-grow: 1;
+        }
+        .tournament-info p {
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tournament-info i {
+            width: 1.25rem;
+            text-align: center;
+            color: var(--primary-color);
+        }
+        .tournament-info span {
+            font-weight: 500;
+            color: var(--text-secondary);
+            min-width: 90px;
+            display: inline-block;
+        }
+        .card-footer {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+        }
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .badge-draft { background-color: #6c757d; color: white; }
+        .badge-upcoming { background-color: #17a2b8; color: white; }
+        .badge-active { background-color: #28a745; color: white; }
+        .badge-completed { background-color: #6f42c1; color: white; }
+        .badge-cancelled { background-color: #dc3545; color: white; }
+    </style>`;
 
-        document.body.appendChild(notification);
+} catch (error) {
+    console.error('Error loading tournaments:', error);
+    container.innerHTML = `
+        <div class="error-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Failed to Load Tournaments</h3>
+            <p>${error.message || 'An error occurred while loading tournaments.'}</p>
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-outline-secondary" onclick="window.adminTournamentsPage.loadTournaments()">
+                    <i class="fas fa-sync"></i> Try Again
+                </button>
+                <button class="btn btn-primary" onclick="window.adminTournamentsPage.showCreateTournamentModal()">
+                    <i class="fas fa-plus"></i> Create New
+                </button>
+            </div>
+        </div>`;
+}
 
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.animation = 'slideOutRight 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }
-        }, 5000);
-    }
+showCreateTournamentModal() {
+    // For now, redirect to admin.html for creating tournaments
+    // This can be enhanced later with a modal
+    window.location.href = 'admin.html';
+}
 
-    getNotificationIcon(type) {
-        const icons = {
-            success: 'check-circle',
-            error: 'exclamation-circle',
+manageTournament(tournamentId) {
+    // Redirect to a manage page or show modal
+    // For now, we'll redirect to a manage URL
+    window.location.href = `admin-manage-tournament.html?id=${tournamentId}`;
+}
+
+editTournament(tournamentId) {
+    // Redirect to edit page
+    window.location.href = `admin-edit-tournament.html?id=${tournamentId}`;
+}
+
+async deleteTournament(tournamentId) {
+    if (!confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) {
+        return;
             warning: 'exclamation-triangle',
             info: 'info-circle'
         };
