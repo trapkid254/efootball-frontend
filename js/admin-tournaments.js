@@ -255,7 +255,7 @@ class AdminTournamentsPage {
             const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`${apiBase}/api/tournaments/${tournamentId}`, {
+            const response = await fetch(`${apiBase}/api/admin/tournaments/${tournamentId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
