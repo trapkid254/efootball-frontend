@@ -93,7 +93,7 @@ class Dashboard {
 
     async loadUpcomingMatches() {
         try {
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/matches/upcoming`, {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/user/upcoming-matches`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ class Dashboard {
                 const now = new Date();
                 const timeDiff = matchDate - now;
                 const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-                
+
                 let timeDisplay;
                 if (daysDiff === 0) {
                     timeDisplay = 'Today';
@@ -129,17 +129,17 @@ class Dashboard {
                 } else {
                     timeDisplay = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 }
-                
+
                 timeDisplay += `, ${matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-                
+
                 // Determine opponent
                 let opponentName = 'TBD';
-                if (match.player1 && match.player1._id !== this.currentUser._id) {
-                    opponentName = match.player1.efootballId;
-                } else if (match.player2 && match.player2._id !== this.currentUser._id) {
-                    opponentName = match.player2.efootballId;
+                if (match.player1 && match.player1.user && match.player1.user._id !== this.currentUser._id) {
+                    opponentName = match.player1.user.efootballId;
+                } else if (match.player2 && match.player2.user && match.player2.user._id !== this.currentUser._id) {
+                    opponentName = match.player2.user.efootballId;
                 }
-                
+
                 return `
                     <div class="match-item">
                         <div class="match-info">
@@ -188,12 +188,12 @@ class Dashboard {
                 return;
             }
 
-            container.innerHTML = await Promise.all(tournaments.map(async tournament => {
+            container.innerHTML = tournaments.map(tournament => {
                 // Get tournament progress
                 let progressText = 'Not Started';
-                if (tournament.status === 'in_progress') {
+                if (tournament.status === 'active') {
                     const participantsCount = tournament.participants?.length || 0;
-                    const maxParticipants = tournament.maxParticipants || 0;
+                    const maxParticipants = tournament.settings?.capacity || 0;
                     progressText = `${participantsCount}/${maxParticipants}`;
                 } else if (tournament.status === 'completed') {
                     progressText = 'Completed';
@@ -201,14 +201,10 @@ class Dashboard {
 
                 // Get next match info if available
                 let nextMatchInfo = 'Check Bracket';
-                if (tournament.nextMatch) {
-                    const matchDate = new Date(tournament.nextMatch.scheduledTime);
-                    nextMatchInfo = `Next: ${matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                }
 
                 // Format prize
-                const prizeText = tournament.prizePool 
-                    ? `KSh ${Number(tournament.prizePool).toLocaleString()}`
+                const prizeText = tournament.settings?.prizePool
+                    ? `KSh ${Number(tournament.settings.prizePool).toLocaleString()}`
                     : 'No Prize';
 
                 return `
@@ -224,7 +220,7 @@ class Dashboard {
                         </div>
                     </div>
                 `;
-            })).then(html => html.join(''));
+            }).join('');
             
         } catch (error) {
             console.error('Error loading active tournaments:', error);
