@@ -247,22 +247,29 @@ class ProfileManager {
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.style.display = 'none';
         });
-        
+
         // Remove active class from all buttons
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        
+
         // Show the selected tab content
         const selectedTab = document.getElementById(`${tabName}-tab`);
         if (selectedTab) {
             selectedTab.style.display = 'block';
         }
-        
+
         // Add active class to the clicked button
         const activeButton = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
         if (activeButton) {
             activeButton.classList.add('active');
+        }
+
+        // Load data for specific tabs
+        if (tabName === 'tournaments') {
+            this.loadUserTournaments();
+        } else if (tabName === 'history') {
+            this.loadMatchHistory();
         }
     }
 
@@ -646,7 +653,7 @@ showNotification(message, type = 'info') {
 
         // Clear any existing background image
         element.style.backgroundImage = '';
-        
+
         // Get user's initials from the current user or element's data attribute
         let initials = '';
         if (this.currentUser && this.currentUser.username) {
@@ -657,15 +664,15 @@ showNotification(message, type = 'info') {
             // Default to 'U' if no initials can be determined
             initials = 'U';
         }
-        
+
         // Set the initials text
         element.textContent = initials;
-        
+
         // Set a default background color based on the first letter
         const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9C9C9C'];
         const colorIndex = initials.charCodeAt(0) % colors.length;
         element.style.backgroundColor = colors[colorIndex];
-        
+
         // Also update the profile picture in the navigation if it exists
         const navAvatar = document.querySelector('.user-avatar, .nav-avatar');
         if (navAvatar && navAvatar !== element) {
@@ -673,6 +680,95 @@ showNotification(message, type = 'info') {
             navAvatar.style.backgroundImage = 'none';
             navAvatar.style.backgroundColor = colors[colorIndex];
         }
+    }
+
+    async loadUserTournaments() {
+        const container = document.getElementById('myTournamentsList');
+        const emptyState = document.getElementById('tournamentsEmpty');
+
+        if (!container) return;
+
+        try {
+            // Show loading state
+            container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Loading your tournaments...</p></div>';
+            if (emptyState) emptyState.style.display = 'none';
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/user/my-tournaments`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load tournaments');
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.tournaments && data.tournaments.length > 0) {
+                this.displayUserTournaments(data.tournaments);
+                if (emptyState) emptyState.style.display = 'none';
+            } else {
+                container.innerHTML = '';
+                if (emptyState) emptyState.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error('Error loading user tournaments:', error);
+            container.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i><p>Failed to load tournaments. Please try again.</p></div>';
+            if (emptyState) emptyState.style.display = 'none';
+        }
+    }
+
+    displayUserTournaments(tournaments) {
+        const container = document.getElementById('myTournamentsList');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        tournaments.forEach(tournament => {
+            const tournamentCard = this.createTournamentCard(tournament);
+            container.appendChild(tournamentCard);
+        });
+    }
+
+    createTournamentCard(tournament) {
+        const card = document.createElement('div');
+        card.className = 'tournament-card';
+
+        const statusClass = tournament.status === 'active' ? 'active' : 'upcoming';
+        const statusText = tournament.status === 'active' ? 'Active' : 'Upcoming';
+
+        card.innerHTML = `
+            <div class="tournament-header">
+                <h3>${tournament.name}</h3>
+                <span class="tournament-status ${statusClass}">${statusText}</span>
+            </div>
+            <div class="tournament-info">
+                <p><i class="fas fa-calendar"></i> ${new Date(tournament.schedule?.tournamentStart).toLocaleDateString()}</p>
+                <p><i class="fas fa-users"></i> ${tournament.participants?.length || 0}/${tournament.settings?.capacity || 0} players</p>
+                <p><i class="fas fa-trophy"></i> Prize: KSh ${tournament.prizePool || 0}</p>
+            </div>
+            <div class="tournament-actions">
+                <button class="btn-secondary" onclick="window.location.href='matches.html'">
+                    <i class="fas fa-eye"></i> View Matches
+                </button>
+            </div>
+        `;
+
+        return card;
+    }
+
+    async loadMatchHistory() {
+        // This method can be implemented later if needed
+        console.log('Loading match history...');
     }
 }
 function showInitials(element) {

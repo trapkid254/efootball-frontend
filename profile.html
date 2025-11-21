@@ -18,11 +18,9 @@
                     <span>TONA KIKWETU</span>
                 </a>
             </div>
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
-                <span class="menu-icon"></span>
-                <span class="menu-icon"></span>
-                <span class="menu-icon"></span>
-            </button>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
             <div class="nav-menu">
                 <a href="index.html" class="nav-link">Home</a>
                 <a href="tournaments.html" class="nav-link">Tournaments</a>
@@ -32,7 +30,21 @@
                 <button class="theme-toggle" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button class="btn-logout" id="logoutBtn">Logout</button>
+                <div class="user-menu" id="userMenu" style="display: none;">
+                    <button class="user-btn" id="userBtn">
+                        <span id="userDisplayName">User</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="profile.html" class="dropdown-item">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                        <a href="#" class="dropdown-item" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+                <button class="btn-login" id="loginBtn">Login</button>
             </div>
         </div>
     </nav>
@@ -86,6 +98,7 @@
         <div class="container">
             <div class="profile-tabs">
                 <button class="tab-btn active" data-tab="edit">Edit Profile</button>
+                <button class="tab-btn" data-tab="tournaments">My Tournaments</button>
                 <button class="tab-btn" data-tab="stats">Statistics</button>
                 <button class="tab-btn" data-tab="history">Match History</button>
                 <button class="tab-btn" data-tab="security">Security</button>
@@ -106,6 +119,21 @@
                         </div>
                         <button type="submit" class="btn">Save Changes</button>
                     </form>
+                </div>
+            </div>
+
+            <!-- My Tournaments Tab -->
+            <div class="tab-content" id="tournaments-tab">
+                <div class="profile-card">
+                    <h2>My Tournaments</h2>
+                    <div class="tournaments-list" id="myTournamentsList">
+                        <!-- User's tournaments will be loaded here -->
+                    </div>
+                    <div id="tournamentsEmpty" class="empty-state" style="display: none;">
+                        <i class="fas fa-trophy"></i>
+                        <h3>No tournaments joined yet</h3>
+                        <p>You haven't registered for any tournaments. <a href="tournaments.html">Browse available tournaments</a> to get started!</p>
+                    </div>
                 </div>
             </div>
 
@@ -192,8 +220,8 @@
 
     <!-- Configuration -->
     <script src="js/config.js"></script>
-    <script src="js/mobile-menu.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/navigation.js"></script>
     <script src="js/profile.js"></script>
 </body>
 </html>

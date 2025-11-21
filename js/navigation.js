@@ -11,11 +11,11 @@ class NavigationManager {
     }
 
     init() {
-        // Initialize mobile menu button
-        this.mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        // Initialize mobile menu button (works for both user and admin pages)
+        this.mobileMenuBtn = document.querySelector('.mobile-menu-btn') || document.getElementById('hamburger');
         this.navMenu = document.querySelector('.nav-menu');
         this.authButton = document.getElementById('authButton') || document.getElementById('loginBtn');
-        
+
         // Set up event listeners
         this.setupEventListeners();
         this.updateAuthButton();
@@ -275,6 +275,15 @@ class NavigationManager {
     }
 
     updateAuthButton() {
+        // Check if this is an admin page
+        const isAdminPage = document.querySelector('.admin-navbar') !== null;
+
+        if (isAdminPage) {
+            // Admin pages don't need user menu updates, just ensure hamburger works
+            return;
+        }
+
+        // Handle user pages
         const userMenu = document.getElementById('userMenu');
         const loginBtn = document.getElementById('loginBtn');
         const userDisplayName = document.getElementById('userDisplayName');
