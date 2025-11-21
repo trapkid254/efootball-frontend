@@ -40,7 +40,7 @@ class AdminTournamentsPage {
         document.body.classList.toggle('dark-theme', isDarkTheme);
 
         const icon = document.querySelector('#themeToggle i');
-        icon.className = isDarkTheme ? 'fas fa-sun' : 'fas fa-moon';
+        if (icon) icon.className = isDarkTheme ? 'fas fa-sun' : 'fas fa-moon';
 
         localStorage.setItem('theme', isDarkTheme ? 'light' : 'dark');
     }
@@ -74,10 +74,28 @@ class AdminTournamentsPage {
             });
 
             if (!response.ok) {
+                // Try to parse error body if JSON, otherwise include status
+                const ct = response.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    const errBody = await response.json().catch(() => ({}));
+                    throw new Error(errBody.message || `HTTP error! status: ${response.status}`);
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            // Handle responses that might not be JSON (avoid Unexpected token '<')
+            const contentType = response.headers.get('content-type') || '';
+            let data;
+            if (contentType.includes('application/json')) {
+                data = await response.json().catch(() => ({}));
+            } else {
+                const text = await response.text().catch(() => '');
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = {};
+                }
+            }
             const tournaments = Array.isArray(data) ? data : (data.tournaments || []);
 
             console.log(`Loaded ${tournaments.length} tournaments for admin`);
@@ -247,10 +265,8 @@ class AdminTournamentsPage {
     }
 
     async deleteTournament(tournamentId) {
-        if (!confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) {
-            return;
-        }
-
+        // deleteTournament is called after the onclick confirm in the template,
+        // so we proceed directly with the request here.
         try {
             const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
             const token = localStorage.getItem('token');
@@ -264,7 +280,14 @@ class AdminTournamentsPage {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
+                const ct = response.headers.get('content-type') || '';
+                let errorData = {};
+                if (ct.includes('application/json')) {
+                    errorData = await response.json().catch(() => ({}));
+                } else {
+                    const text = await response.text().catch(() => '');
+                    errorData.message = text || `Failed to delete tournament (${response.status})`;
+                }
                 throw new Error(errorData.message || `Failed to delete tournament (${response.status})`);
             }
 
@@ -273,124 +296,19 @@ class AdminTournamentsPage {
             this.loadTournaments();
 
         } catch (error) {
-            </div>
-        `).join('')}
-    </div>
-    <style>
-        .tournaments-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
+            console.error('Error deleting tournament:', error);
+            this.showNotification(error.message || 'Failed to delete tournament', 'error');
         }
-        .tournament-card {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .tournament-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 1.25rem 1.25rem 0.75rem;
-        }
-        .card-header h3 {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .card-body {
-            padding: 0 1.25rem 1.25rem;
-            flex-grow: 1;
-        }
-        .tournament-info p {
-            margin: 0.5rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .tournament-info i {
-            width: 1.25rem;
-            text-align: center;
-            color: var(--primary-color);
-        }
-        .tournament-info span {
-            font-weight: 500;
-            color: var(--text-secondary);
-            min-width: 90px;
-            display: inline-block;
-        }
-        .card-footer {
-            display: flex;
-            gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
-            background-color: var(--bg-secondary);
-            border-top: 1px solid var(--border-color);
-            border-bottom-left-radius: 0.5rem;
-            border-bottom-right-radius: 0.5rem;
-        }
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: capitalize;
-        }
-        .badge-draft { background-color: #6c757d; color: white; }
-        .badge-upcoming { background-color: #17a2b8; color: white; }
-        .badge-active { background-color: #28a745; color: white; }
-        .badge-completed { background-color: #6f42c1; color: white; }
-        .badge-cancelled { background-color: #dc3545; color: white; }
-    </style>`;
+    }
 
-} catch (error) {
-    console.error('Error loading tournaments:', error);
-    container.innerHTML = `
-        <div class="error-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Failed to Load Tournaments</h3>
-            <p>${error.message || 'An error occurred while loading tournaments.'}</p>
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-outline-secondary" onclick="window.adminTournamentsPage.loadTournaments()">
-                    <i class="fas fa-sync"></i> Try Again
-                </button>
-                <button class="btn btn-primary" onclick="window.adminTournamentsPage.showCreateTournamentModal()">
-                    <i class="fas fa-plus"></i> Create New
-                </button>
-            </div>
-        </div>`;
-}
-
-showCreateTournamentModal() {
-    // For now, redirect to admin.html for creating tournaments
-    // This can be enhanced later with a modal
-    window.location.href = 'admin.html';
-}
-
-manageTournament(tournamentId) {
-    // Redirect to a manage page or show modal
-    // For now, we'll redirect to a manage URL
-    window.location.href = `admin-manage-tournament.html?id=${tournamentId}`;
-}
-
-editTournament(tournamentId) {
-    // Redirect to edit page
-    window.location.href = `admin-edit-tournament.html?id=${tournamentId}`;
-}
-
-async deleteTournament(tournamentId) {
-    if (!confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) {
-        return;
-            warning: 'exclamation-triangle',
-            info: 'info-circle'
-        };
-        return icons[type] || 'info-circle';
+    showNotification(message, type = 'info') {
+        // Minimal notification: replace with a UI toast if available.
+        // Using alert to keep it simple and ensure feedback.
+        if (typeof message === 'string') {
+            alert(message);
+        } else {
+            console.log(type, message);
+        }
     }
 }
 

@@ -14,6 +14,7 @@ class TournamentsPage {
     init() {
         this.checkAuth();
         this.setupEventListeners();
+        this.loadMyTournaments();
         this.loadTournaments();
     }
 
@@ -194,26 +195,67 @@ class TournamentsPage {
         }
     }
 
+    async loadMyTournaments() {
+        try {
+            const token = localStorage.getItem('token');
+            const myTournamentsSection = document.getElementById('myTournamentsSection');
+
+            // Only show my tournaments section if user is logged in
+            if (!token || !this.currentUser) {
+                myTournamentsSection.style.display = 'none';
+                return;
+            }
+
+            const apiBase = window.API_BASE_URL || 'http://localhost:5000';
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+
+            const response = await fetch(`${apiBase}/api/user/my-tournaments`, { headers });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // Token is invalid, hide the section
+                    myTournamentsSection.style.display = 'none';
+                    return;
+                }
+                throw new Error(`Failed to fetch your tournaments: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const myTournaments = data.tournaments || [];
+
+            this.renderMyTournaments(myTournaments);
+
+        } catch (error) {
+            console.error('Error loading my tournaments:', error);
+            // Hide the section on error
+            const myTournamentsSection = document.getElementById('myTournamentsSection');
+            myTournamentsSection.style.display = 'none';
+        }
+    }
+
     async loadTournaments() {
         try {
             this.showLoading(true);
             const apiBase = window.API_BASE_URL || 'http://localhost:5000';
-            
+
             // Get the authentication token
             const token = localStorage.getItem('token');
-            
+
             // If user is not logged in, show only public tournaments
             if (!token) {
                 await this.loadPublicTournaments();
                 return;
             }
-            
+
             // If user is logged in, load their tournaments
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             };
-            
+
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -223,7 +265,7 @@ class TournamentsPage {
                     fetch(`${apiBase}/api/user/my-tournaments`, { headers, signal: controller.signal }),
                     fetch(`${apiBase}/api/user/available-tournaments`, { headers, signal: controller.signal })
                 ]);
-                
+
                 clearTimeout(timeoutId);
 
                 // Handle my tournaments response
@@ -239,10 +281,10 @@ class TournamentsPage {
                     }
                     throw new Error(`Failed to fetch your tournaments: ${myTournamentsResp.status}`);
                 }
-                
+
                 const myTournamentsData = await myTournamentsResp.json();
                 const myTournaments = myTournamentsData.tournaments || [];
-                
+
                 // Handle available tournaments response
                 let availableTournaments = [];
                 if (availableResp.ok) {
@@ -257,20 +299,20 @@ class TournamentsPage {
                     await this.loadPublicTournaments();
                     return;
                 }
-                
+
                 // Combine both lists, marking which ones the user is registered for
                 const allTournaments = [
                     ...myTournaments.map(t => ({ ...t, isRegistered: true })),
                     ...availableTournaments.map(t => ({ ...t, isRegistered: false }))
                 ];
-                
+
                 if (allTournaments.length === 0) {
                     this.showEmptyState('No tournaments are currently available. Check back later or contact the administrator for upcoming events.', false);
                     return;
                 }
-                
+
                 this.renderTournaments(allTournaments);
-                
+
             } catch (error) {
                 clearTimeout(timeoutId);
                 if (error.name === 'AbortError') {
@@ -286,7 +328,7 @@ class TournamentsPage {
         } catch (error) {
             console.error('Error loading tournaments:', error);
             let errorMessage = 'Failed to load tournaments. ';
-            
+
             if (error.message.includes('Failed to fetch')) {
                 errorMessage += 'Unable to connect to the server. Please check your internet connection and try again.';
             } else if (error.message.includes('timeout')) {
@@ -294,7 +336,7 @@ class TournamentsPage {
             } else {
                 errorMessage += error.message || 'Please try again later.';
             }
-            
+
             this.showEmptyState(errorMessage, true);
         } finally {
             this.showLoading(false);
@@ -306,6 +348,67 @@ class TournamentsPage {
         this.loadTournaments();
     }
 
+    renderMyTournaments(tournaments) {
+        const myTournamentsSection = document.getElementById('myTournamentsSection');
+        const myTournamentsGrid = document.getElementById('myTournamentsGrid');
+        const myTournamentsEmpty = document.getElementById('myTournamentsEmpty');
+
+        if (tournaments.length === 0) {
+            myTournamentsSection.style.display = 'block';
+            myTournamentsGrid.style.display = 'none';
+            myTournamentsEmpty.style.display = 'flex';
+            return;
+        }
+
+        myTournamentsSection.style.display = 'block';
+        myTournamentsGrid.style.display = 'grid';
+        myTournamentsEmpty.style.display = 'none';
+
+        myTournamentsGrid.innerHTML = tournaments.map(tournament => {
+            const participants = tournament.participants?.length || 0;
+            const maxParticipants = tournament.capacity || tournament.settings?.capacity || 0;
+            const entryFee = tournament.entryFee ?? tournament.settings?.entryFee ?? 0;
+            const prizePool = tournament.prizePool ?? tournament.settings?.prizePool ?? 0;
+            const startDate = tournament.schedule?.tournamentStart || tournament.startDate || Date.now();
+
+            return `
+            <div class="tournament-card my-tournament-card" data-status="${tournament.status}" data-format="${tournament.format}">
+                <div class="tournament-header">
+                    <span class="tournament-prize">KSh ${prizePool.toLocaleString()}</span>
+                    <span class="tournament-status ${tournament.status}">${tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}</span>
+                </div>
+                <div class="tournament-info">
+                    <h3>${tournament.name}</h3>
+                    <p>${tournament.description || 'No description available.'}</p>
+                    <div class="tournament-meta">
+                        <span class="participants-count">
+                            <i class="fas fa-users"></i> ${participants}/${maxParticipants}
+                        </span>
+                        <span><i class="fas fa-calendar"></i> ${new Date(startDate).toLocaleDateString()}</span>
+                        <span><i class="fas fa-trophy"></i> ${tournament.format || 'N/A'}</span>
+                        <span><i class="fas fa-ticket-alt"></i> ${entryFee > 0 ? `Entry: KSh ${entryFee.toLocaleString()}` : 'Free Entry'}</span>
+                    </div>
+                    <div class="tournament-actions">
+                        <button class="btn-secondary view-details" data-id="${tournament._id}">
+                            <i class="fas fa-info-circle"></i> View Details
+                        </button>
+                        <span class="registered-badge">
+                            <i class="fas fa-check-circle"></i> Registered
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `}).join('');
+
+        // Add event listeners for view details buttons
+        myTournamentsGrid.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tournamentId = e.target.closest('.view-details').dataset.id;
+                this.showTournamentDetails(tournamentId);
+            });
+        });
+    }
+
     renderTournaments(tournaments) {
         const filteredTournaments = this.filterTournaments(tournaments);
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -313,7 +416,7 @@ class TournamentsPage {
         const paginatedTournaments = filteredTournaments.slice(startIndex, endIndex);
 
         const grid = document.getElementById('tournamentsGrid');
-        
+
         if (paginatedTournaments.length === 0) {
             this.showEmptyState('No tournaments match your filters. Try adjusting your search criteria.');
             return;
@@ -328,7 +431,7 @@ class TournamentsPage {
             const entryFee = tournament.entryFee ?? tournament.settings?.entryFee ?? 0;
             const prizePool = tournament.prizePool ?? tournament.settings?.prizePool ?? 0;
             const startDate = tournament.schedule?.tournamentStart || tournament.startDate || Date.now();
-            
+
             return `
             <div class="tournament-card" data-status="${tournament.status}" data-format="${tournament.format}" data-fee="${entryFee === 0 ? 'free' : 'paid'}">
                 <div class="tournament-header">
@@ -351,13 +454,13 @@ class TournamentsPage {
                         <button class="btn-secondary view-details" data-id="${tournament._id}">
                             <i class="fas fa-info-circle"></i> Details
                         </button>
-                        <button 
-                            class="join-tournament ${entryFee === 0 ? 'free' : 'paid'} ${!canJoin ? 'disabled' : ''}" 
+                        <button
+                            class="join-tournament ${entryFee === 0 ? 'free' : 'paid'} ${!canJoin ? 'disabled' : ''}"
                             data-id="${tournament._id}"
                             ${!canJoin ? 'disabled' : ''}
                             title="${isFull ? 'Tournament is full' : !isUpcoming ? 'Registration closed' : ''}"
                         >
-                            ${isFull ? 'Tournament Full' : !isUpcoming ? 'Registration Closed' : 
+                            ${isFull ? 'Tournament Full' : !isUpcoming ? 'Registration Closed' :
                               entryFee > 0 ? `Join - KSh ${entryFee.toLocaleString()}` : 'Join Free'}
                         </button>
                     </div>
@@ -554,6 +657,7 @@ class TournamentsPage {
 
             this.showNotification('Successfully joined the tournament!', 'success');
             this.loadTournaments(); // Refresh the list
+            this.loadMyTournaments(); // Refresh my tournaments section
         } catch (error) {
             console.error('Error joining tournament:', error);
             this.showNotification(error.message || 'Failed to join tournament', 'error');
