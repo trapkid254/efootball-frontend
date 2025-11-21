@@ -6,6 +6,7 @@
 class NavigationManager {
     constructor() {
         this.mobileMenuOpen = false;
+        this.userDropdownOpen = false;
         this.init();
     }
 
@@ -33,12 +34,20 @@ class NavigationManager {
             if (loginModal && loginModal.style.display === 'block' && e.target === loginModal) {
                 this.hideModal(loginModal);
             }
-            
+
             // Handle mobile menu close when clicking outside
-            if (this.mobileMenuOpen && 
-                !this.navMenu.contains(e.target) && 
+            if (this.mobileMenuOpen &&
+                !this.navMenu.contains(e.target) &&
                 !this.mobileMenuBtn.contains(e.target)) {
                 this.closeMobileMenu();
+            }
+
+            // Handle user dropdown close when clicking outside
+            const userMenu = document.getElementById('userMenu');
+            const userDropdown = document.getElementById('userDropdown');
+            if (this.userDropdownOpen &&
+                userMenu && !userMenu.contains(e.target)) {
+                this.closeUserDropdown();
             }
         });
 
@@ -69,6 +78,24 @@ class NavigationManager {
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // Handle user button click
+        const userBtn = document.getElementById('userBtn');
+        if (userBtn) {
+            userBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleUserDropdown();
+            });
+        }
+
+        // Handle logout button click
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleLogout();
+            });
         }
 
         // Close mobile menu on window resize if it becomes desktop view
@@ -248,18 +275,29 @@ class NavigationManager {
     }
 
     updateAuthButton() {
-        if (!this.authButton) return;
-        
+        const userMenu = document.getElementById('userMenu');
+        const loginBtn = document.getElementById('loginBtn');
+        const userDisplayName = document.getElementById('userDisplayName');
+        const userBtn = document.getElementById('userBtn');
+
         const token = localStorage.getItem('token');
         if (token) {
             const user = AuthManager.getCurrentUser();
-            if (user) {
-                this.authButton.textContent = 'Logout';
-                this.authButton.title = `Logged in as ${user.username || user.whatsapp}`;
+            if (user && user.efootballId) {
+                // Show user menu with efootball ID
+                if (userMenu) userMenu.style.display = 'flex';
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (userDisplayName) userDisplayName.textContent = user.efootballId;
+                if (userBtn) userBtn.title = `Logged in as ${user.efootballId}`;
+            } else {
+                // Fallback if no user data
+                if (userMenu) userMenu.style.display = 'none';
+                if (loginBtn) loginBtn.style.display = 'inline-block';
             }
         } else {
-            this.authButton.textContent = 'Login';
-            this.authButton.title = 'Login to your account';
+            // Show login button
+            if (userMenu) userMenu.style.display = 'none';
+            if (loginBtn) loginBtn.style.display = 'inline-block';
         }
     }
 
@@ -267,11 +305,55 @@ class NavigationManager {
         document.body.classList.toggle('light-theme');
         const isLight = document.body.classList.contains('light-theme');
         localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        
+
         const themeIcon = document.querySelector('.theme-toggle i');
         if (themeIcon) {
             themeIcon.className = isLight ? 'fas fa-moon' : 'fas fa-sun';
         }
+    }
+
+    toggleUserDropdown() {
+        const userDropdown = document.getElementById('userDropdown');
+        const userBtn = document.getElementById('userBtn');
+
+        if (!userDropdown || !userBtn) return;
+
+        this.userDropdownOpen = !this.userDropdownOpen;
+
+        if (this.userDropdownOpen) {
+            userDropdown.classList.add('show');
+            userBtn.classList.add('active');
+        } else {
+            this.closeUserDropdown();
+        }
+    }
+
+    closeUserDropdown() {
+        const userDropdown = document.getElementById('userDropdown');
+        const userBtn = document.getElementById('userBtn');
+
+        this.userDropdownOpen = false;
+
+        if (userDropdown) {
+            userDropdown.classList.remove('show');
+        }
+        if (userBtn) {
+            userBtn.classList.remove('active');
+        }
+    }
+
+    handleLogout() {
+        if (confirm('Are you sure you want to log out?')) {
+            if (typeof AuthManager !== 'undefined' && typeof AuthManager.logout === 'function') {
+                AuthManager.logout();
+            } else {
+                // Fallback logout
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.reload();
+            }
+        }
+        this.closeUserDropdown();
     }
 }
 
