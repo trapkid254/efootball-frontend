@@ -479,6 +479,7 @@ class AdminPanel {
                 name: tournamentData.name,
                 description: tournamentData.description,
                 format: tournamentData.format,
+                matchFormat: formData.get('matchFormat') || 'one-leg',
                 organizer: organizerId,  // Include organizer ID in the request body
                 schedule: {
                     tournamentStart: tournamentData.startDate

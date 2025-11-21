@@ -121,14 +121,20 @@ class LeaderboardPage {
 
     async loadTournaments() {
         try {
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/tournaments?status=active`);
+            // Load user's registered tournaments
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/tournaments`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 this.tournaments = data.tournaments || [];
                 this.renderTournamentSelector();
             }
         } catch (error) {
-            console.error('Error loading tournaments:', error);
+            console.error('Error loading user tournaments:', error);
         }
     }
 
@@ -198,13 +204,27 @@ class LeaderboardPage {
         const topPlayersContainer = document.getElementById('topPlayers');
         const leaderboardList = document.getElementById('leaderboardList');
         const userPositionContainer = document.getElementById('userPosition');
-        
+        const titleElement = document.getElementById('leaderboardTitle');
+        const descriptionElement = document.getElementById('leaderboardDescription');
+
         if (!topPlayersContainer || !leaderboardList) return;
-        
+
+        // Update title and description based on current selection
+        if (this.currentTournamentId === 'global') {
+            titleElement.textContent = 'Global Leaderboard';
+            descriptionElement.textContent = 'See where you stand among all Efootball players across all tournaments';
+        } else {
+            const tournament = this.tournaments.find(t => t._id === this.currentTournamentId);
+            if (tournament) {
+                titleElement.textContent = `${tournament.name} Leaderboard`;
+                descriptionElement.textContent = `See standings for the ${tournament.name} tournament`;
+            }
+        }
+
         // Clear existing content
         topPlayersContainer.innerHTML = '';
         leaderboardList.innerHTML = '';
-        
+
         if (this.leaderboardData.length === 0) {
             leaderboardList.innerHTML = `
                 <div class="empty-state">
@@ -215,10 +235,10 @@ class LeaderboardPage {
             `;
             return;
         }
-        
+
         // Get top 3 players for the podium
         const topPlayers = this.leaderboardData.slice(0, 3);
-        
+
         // Render top players (podium)
         if (topPlayers.length > 0) {
             topPlayersContainer.innerHTML = `
@@ -234,14 +254,15 @@ class LeaderboardPage {
                 </div>
             `;
         }
-        
+
         // Render the rest of the leaderboard
         const remainingPlayers = this.leaderboardData.slice(3);
-        
+
         leaderboardList.innerHTML = remainingPlayers.map((player, index) => {
             const rank = index + 4; // +4 because we already showed top 3
             const isCurrentUser = this.currentUser && player._id === this.currentUser._id;
-            
+            const goalDiff = (player.goalsFor || 0) - (player.goalsAgainst || 0);
+
             return `
                 <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}" data-rank="${rank}">
                     <span class="rank">${rank}</span>
@@ -252,11 +273,12 @@ class LeaderboardPage {
                     </span>
                     <span class="points">${player.points || 0}</span>
                     <span class="wins">${player.wins || 0}</span>
+                    <span class="goal-diff">${goalDiff >= 0 ? '+' : ''}${goalDiff}</span>
                     <span class="win-rate">${this.calculateWinRate(player)}%</span>
                 </div>
             `;
         }).join('');
-        
+
         // Show user's position if not in top 20
         if (this.currentUser) {
             const userRank = this.leaderboardData.findIndex(p => p._id === this.currentUser._id);
@@ -290,10 +312,12 @@ class LeaderboardPage {
     renderUserPosition(position) {
         const container = document.getElementById('userPosition');
         if (!container) return;
-        
+
         container.style.display = 'block';
         container.querySelector('.leaderboard-item')?.remove();
-        
+
+        const goalDiff = (position.goalsFor || 0) - (position.goalsAgainst || 0);
+
         const userItem = document.createElement('div');
         userItem.className = 'leaderboard-item current-user';
         userItem.innerHTML = `
@@ -305,9 +329,10 @@ class LeaderboardPage {
             </span>
             <span class="points">${position.points || 0}</span>
             <span class="wins">${position.wins || 0}</span>
+            <span class="goal-diff">${goalDiff >= 0 ? '+' : ''}${goalDiff}</span>
             <span class="win-rate">${this.calculateWinRate(position)}%</span>
         `;
-        
+
         container.appendChild(userItem);
     }
     

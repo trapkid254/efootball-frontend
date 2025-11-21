@@ -168,8 +168,22 @@ class ProfileManager {
         if (whatsappElement) whatsappElement.textContent = `WhatsApp: ${this.currentUser.whatsapp || 'Not set'}`;
         if (userAvatar) userAvatar.textContent = (this.currentUser.efootballId || 'U').charAt(0).toUpperCase();
 
+        // Update form fields
+        this.populateFormFields();
+
         // Update stats
         this.updateStats();
+    }
+
+    populateFormFields() {
+        if (!this.currentUser) return;
+
+        // Populate profile form
+        const efootballIdField = document.getElementById('efootballId');
+        const whatsappField = document.getElementById('whatsapp');
+
+        if (efootballIdField) efootballIdField.value = this.currentUser.efootballId || '';
+        if (whatsappField) whatsappField.value = this.currentUser.whatsapp || '';
     }
 
     updateStats() {
@@ -239,6 +253,18 @@ class ProfileManager {
         if (avatarUploadBtn && avatarInput) {
             avatarUploadBtn.addEventListener('click', () => avatarInput.click());
             avatarInput.addEventListener('change', (e) => this.handleAvatarUpload(e));
+        }
+
+        // Profile form submission
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('submit', (e) => this.handleProfileUpdate(e));
+        }
+
+        // Password form submission
+        const passwordForm = document.getElementById('passwordForm');
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', (e) => this.handlePasswordChange(e));
         }
     }
 
@@ -769,6 +795,122 @@ showNotification(message, type = 'info') {
     async loadMatchHistory() {
         // This method can be implemented later if needed
         console.log('Loading match history...');
+    }
+
+    async handleProfileUpdate(event) {
+        event.preventDefault();
+
+        const whatsappField = document.getElementById('whatsapp');
+        const whatsapp = whatsappField ? whatsappField.value.trim() : '';
+
+        if (!whatsapp) {
+            this.showNotification('Please enter a WhatsApp number', 'error');
+            return;
+        }
+
+        // Basic WhatsApp validation
+        if (!/^(07\d{8}|2547\d{8}|\+2547\d{8})$/.test(whatsapp.replace(/\s/g, ''))) {
+            this.showNotification('Please enter a valid WhatsApp number', 'error');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/users/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ whatsapp })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to update profile');
+            }
+
+            const result = await response.json();
+
+            // Update local user data
+            this.currentUser.whatsapp = whatsapp;
+            localStorage.setItem('user', JSON.stringify(this.currentUser));
+
+            // Update UI
+            this.updateUI();
+
+            this.showNotification('Profile updated successfully!', 'success');
+
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            this.showNotification(error.message || 'Failed to update profile', 'error');
+        }
+    }
+
+    async handlePasswordChange(event) {
+        event.preventDefault();
+
+        const currentPasswordField = document.getElementById('currentPassword');
+        const newPasswordField = document.getElementById('newPassword');
+        const confirmPasswordField = document.getElementById('confirmPassword');
+
+        const currentPassword = currentPasswordField ? currentPasswordField.value : '';
+        const newPassword = newPasswordField ? newPasswordField.value : '';
+        const confirmPassword = confirmPasswordField ? confirmPasswordField.value : '';
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            this.showNotification('Please fill in all password fields', 'error');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            this.showNotification('New passwords do not match', 'error');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            this.showNotification('New password must be at least 6 characters long', 'error');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/auth/change-password`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    currentPassword,
+                    newPassword
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to change password');
+            }
+
+            // Clear form
+            currentPasswordField.value = '';
+            newPasswordField.value = '';
+            confirmPasswordField.value = '';
+
+            this.showNotification('Password changed successfully!', 'success');
+
+        } catch (error) {
+            console.error('Error changing password:', error);
+            this.showNotification(error.message || 'Failed to change password', 'error');
+        }
     }
 }
 function showInitials(element) {

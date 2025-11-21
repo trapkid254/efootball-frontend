@@ -101,7 +101,7 @@
 
 .leaderboard-header {
     display: grid;
-    grid-template-columns: 80px 2fr 1fr 1fr 1fr;
+    grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr;
     padding: 1rem 1.5rem;
     background: var(--primary-color);
     color: white;
@@ -118,7 +118,7 @@
 
 .leaderboard-item {
     display: grid;
-    grid-template-columns: 80px 2fr 1fr 1fr 1fr;
+    grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr;
     align-items: center;
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
@@ -169,6 +169,7 @@
 
 .leaderboard-item .points,
 .leaderboard-item .wins,
+.leaderboard-item .goal-diff,
 .leaderboard-item .win-rate {
     text-align: center;
     font-weight: 500;
@@ -237,19 +238,19 @@
     
     .leaderboard-header,
     .leaderboard-item {
-        grid-template-columns: 50px 2fr 1fr 1fr 1fr;
+        grid-template-columns: 50px 2fr 1fr 1fr 1fr 1fr;
         padding: 0.75rem 1rem;
         font-size: 0.9rem;
     }
-    
+
     .leaderboard-header span:last-child,
     .leaderboard-item .win-rate {
         display: none;
     }
-    
+
     .leaderboard-header,
     .leaderboard-item {
-        grid-template-columns: 50px 2fr 1fr 1fr;
+        grid-template-columns: 50px 2fr 1fr 1fr 1fr;
     }
 }
 

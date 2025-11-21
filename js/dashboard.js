@@ -168,7 +168,7 @@ class Dashboard {
 
     async loadActiveTournaments() {
         try {
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/tournaments/active`, {
+            const response = await fetch(`${window.API_BASE_URL || ''}/api/user/tournaments`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
@@ -176,7 +176,7 @@ class Dashboard {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to fetch active tournaments');
+                throw new Error('Failed to fetch user tournaments');
             }
 
             const data = await response.json();
@@ -184,7 +184,7 @@ class Dashboard {
             const container = document.getElementById('activeTournaments');
 
             if (tournaments.length === 0) {
-                container.innerHTML = '<p class="empty-state">No active tournaments</p>';
+                container.innerHTML = '<p class="empty-state">You haven\'t registered for any tournaments yet</p>';
                 return;
             }
 
@@ -221,9 +221,9 @@ class Dashboard {
                     </div>
                 `;
             }).join('');
-            
+
         } catch (error) {
-            console.error('Error loading active tournaments:', error);
+            console.error('Error loading user tournaments:', error);
             const container = document.getElementById('activeTournaments');
             container.innerHTML = `
                 <div class="error-state">
