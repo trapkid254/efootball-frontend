@@ -1713,6 +1713,8 @@ body {
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .payment-header {
@@ -1890,6 +1892,7 @@ body {
     .payment-modal {
         margin: 1rem;
         width: calc(100% - 2rem);
+        max-height: 85vh;
     }
 
     .payment-header {
@@ -1907,11 +1910,18 @@ body {
 
     .payment-content {
         padding: 1.5rem;
+        max-height: 60vh;
+        overflow-y: auto;
     }
 
     .payment-actions {
         flex-direction: column;
         padding: 0 1.5rem 1.5rem;
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-secondary);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 1rem;
     }
 
     .step {
