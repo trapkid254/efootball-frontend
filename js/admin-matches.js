@@ -5,6 +5,7 @@ class AdminMatchesPage {
 
     init() {
         this.setupEventListeners();
+        this.loadTournaments();
         this.loadMatches();
     }
 
@@ -22,6 +23,28 @@ class AdminMatchesPage {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
                 this.logout();
+            });
+        }
+
+        // Filters
+        const applyFiltersBtn = document.getElementById('applyFilters');
+        if (applyFiltersBtn) {
+            applyFiltersBtn.addEventListener('click', () => {
+                this.loadMatches();
+            });
+        }
+
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => {
+                this.loadMatches();
+            });
+        }
+
+        const tournamentFilter = document.getElementById('tournamentFilter');
+        if (tournamentFilter) {
+            tournamentFilter.addEventListener('change', () => {
+                this.loadMatches();
             });
         }
     }
@@ -61,7 +84,19 @@ class AdminMatchesPage {
             const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`${apiBase}/api/matches/admin/pending`, {
+            // Get filter values
+            const statusFilter = document.getElementById('statusFilter');
+            const tournamentFilter = document.getElementById('tournamentFilter');
+
+            const params = new URLSearchParams();
+            if (statusFilter && statusFilter.value !== 'all') {
+                params.append('status', statusFilter.value);
+            }
+            if (tournamentFilter && tournamentFilter.value !== 'all') {
+                params.append('tournament', tournamentFilter.value);
+            }
+
+            const response = await fetch(`${apiBase}/api/matches/admin/all?${params.toString()}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
@@ -75,14 +110,14 @@ class AdminMatchesPage {
             const data = await response.json();
             const matches = data.matches || [];
 
-            console.log(`Loaded ${matches.length} pending matches for admin`);
+            console.log(`Loaded ${matches.length} matches for admin`);
 
             if (matches.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-gamepad"></i>
-                        <h3>No Pending Matches</h3>
-                        <p>There are no matches pending verification at the moment. All matches have been verified or no matches have been scheduled yet.</p>
+                        <h3>No Matches Found</h3>
+                        <p>No matches match your current filters. Try adjusting the filters or check back later.</p>
                         <button class="btn btn-primary" onclick="window.adminMatchesPage.loadMatches()">
                             <i class="fas fa-sync"></i> Refresh
                         </button>
@@ -90,9 +125,32 @@ class AdminMatchesPage {
                 return;
             }
 
+            // Add filters section
             container.innerHTML = `
+                <div class="filters-section">
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="statusFilter">Status:</label>
+                            <select id="statusFilter">
+                                <option value="all">All Matches</option>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="disputed">Disputed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="tournamentFilter">Tournament:</label>
+                            <select id="tournamentFilter">
+                                <option value="all">All Tournaments</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+                    </div>
+                </div>
                 <div class="section-header">
-                    <h2>Pending Matches (${matches.length})</h2>
+                    <h2>All Matches (${data.pagination ? data.pagination.total : matches.length})</h2>
                     <button class="btn btn-secondary" onclick="window.adminMatchesPage.loadMatches()">
                         <i class="fas fa-sync"></i> Refresh
                     </button>
@@ -242,6 +300,45 @@ class AdminMatchesPage {
                         </button>
                     </div>
                 </div>`;
+        }
+    }
+
+    async loadTournaments() {
+        try {
+            const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`${apiBase}/api/tournaments?limit=1000`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to load tournaments for filter');
+                return;
+            }
+
+            const data = await response.json();
+            const tournaments = data.tournaments || [];
+
+            const tournamentFilter = document.getElementById('tournamentFilter');
+            if (tournamentFilter) {
+                // Clear existing options except "All Tournaments"
+                tournamentFilter.innerHTML = '<option value="all">All Tournaments</option>';
+
+                // Add tournament options
+                tournaments.forEach(tournament => {
+                    const option = document.createElement('option');
+                    option.value = tournament._id;
+                    option.textContent = tournament.name;
+                    tournamentFilter.appendChild(option);
+                });
+            }
+
+        } catch (error) {
+            console.error('Error loading tournaments:', error);
         }
     }
 

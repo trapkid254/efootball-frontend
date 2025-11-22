@@ -89,7 +89,7 @@ class MatchesPage {
             }
             
             // If user is registered in tournaments, fetch their matches
-            const matchesResponse = await this.fetchWithAuth('/api/user/upcoming-matches');
+            const matchesResponse = await this.fetchWithAuth('/api/matches/my-matches');
             
             if (!matchesResponse.success) {
                 throw new Error(matchesResponse.message || 'Failed to load matches');

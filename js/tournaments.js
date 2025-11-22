@@ -19,33 +19,59 @@ class TournamentsPage {
     }
 
     setupModal() {
-        // Get the modal element
+        // Get the modal elements
         this.modal = document.getElementById('tournamentDetailsModal');
         this.modalContent = document.getElementById('tournamentDetailsContent');
+        this.paymentModal = document.getElementById('paymentModal');
 
         // Get the element that closes the modal
-        const closeBtn = document.querySelector('.modal .close');
+        const closeBtns = document.querySelectorAll('.modal .close');
 
         // When the user clicks on (x), close the modal
-        if (closeBtn) {
-            closeBtn.onclick = () => {
+        closeBtns.forEach(btn => {
+            btn.onclick = () => {
                 this.hideModal();
+                this.hidePaymentModal();
             };
-        }
+        });
 
         // When the user clicks anywhere outside of the modal, close it
         window.onclick = (event) => {
             if (event.target === this.modal) {
                 this.hideModal();
             }
+            if (event.target === this.paymentModal) {
+                this.hidePaymentModal();
+            }
         };
 
         // Close modal with Escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.modal && this.modal.style.display === 'block') {
-                this.hideModal();
+            if (e.key === 'Escape') {
+                if (this.modal && this.modal.style.display === 'block') {
+                    this.hideModal();
+                }
+                if (this.paymentModal && this.paymentModal.style.display === 'block') {
+                    this.hidePaymentModal();
+                }
             }
         });
+
+        // Payment modal buttons
+        const cancelPaymentBtn = document.getElementById('cancelPayment');
+        const confirmPaymentBtn = document.getElementById('confirmPayment');
+
+        if (cancelPaymentBtn) {
+            cancelPaymentBtn.addEventListener('click', () => {
+                this.hidePaymentModal();
+            });
+        }
+
+        if (confirmPaymentBtn) {
+            confirmPaymentBtn.addEventListener('click', () => {
+                this.confirmPayment();
+            });
+        }
     }
     
     showModal() {
@@ -62,6 +88,42 @@ class TournamentsPage {
             this.modal.classList.remove('show');
             document.body.style.overflow = '';
         }
+    }
+
+    showPaymentModal(amount, tournamentId) {
+        if (!this.paymentModal) return;
+
+        // Store tournament info for payment confirmation
+        this.pendingPayment = {
+            amount: amount,
+            tournamentId: tournamentId
+        };
+
+        // Update payment modal content
+        const paymentAmount = document.getElementById('paymentAmount');
+        const mpesaAmount = document.getElementById('mpesaAmount');
+
+        if (paymentAmount) {
+            paymentAmount.textContent = `KSh ${amount.toLocaleString()}`;
+        }
+        if (mpesaAmount) {
+            mpesaAmount.textContent = `KSh ${amount.toLocaleString()}`;
+        }
+
+        // Show the modal
+        this.paymentModal.style.display = 'block';
+        this.paymentModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hidePaymentModal() {
+        if (this.paymentModal) {
+            this.paymentModal.style.display = 'none';
+            this.paymentModal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        // Clear pending payment
+        this.pendingPayment = null;
     }
 
     checkAuth() {
@@ -633,31 +695,13 @@ class TournamentsPage {
             }
 
             if (entryFee > 0) {
-                const confirmed = this.promptPaymentInstructions(entryFee);
-                if (!confirmed) {
-                    this.showNotification('Payment is required to join this tournament.', 'warning');
-                    return;
-                }
+                // Show professional payment modal instead of confirm dialog
+                this.showPaymentModal(entryFee, tournamentId);
+                return;
             }
 
-            // If not full, proceed with joining
-            const joinResp = await fetch(`${apiBase}/api/tournaments/${tournamentId}/join`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await joinResp.json();
-            
-            if (!joinResp.ok) {
-                throw new Error(data.message || 'Failed to join tournament');
-            }
-
-            this.showNotification('Successfully joined the tournament!', 'success');
-            this.loadTournaments(); // Refresh the list
-            this.loadMyTournaments(); // Refresh my tournaments section
+            // If free tournament, proceed with joining directly
+            await this.completeTournamentJoin(tournamentId);
         } catch (error) {
             console.error('Error joining tournament:', error);
             this.showNotification(error.message || 'Failed to join tournament', 'error');
@@ -669,12 +713,54 @@ class TournamentsPage {
         }
     }
 
-    promptPaymentInstructions(amount) {
-        const formattedAmount = Number(amount || 0).toLocaleString();
-        const message = `This tournament requires an entry fee of KSh ${formattedAmount}.\n\n` +
-            `Please send the payment via M-PESA to 0714003218 before continuing.\n` +
-            `Tap OK once you've completed the payment to finish your registration.`;
-        return window.confirm(message);
+    async completeTournamentJoin(tournamentId) {
+        try {
+            const apiBase = (window.API_BASE_URL) || 'http://127.0.0.1:5000';
+            const token = localStorage.getItem('token');
+
+            const joinResp = await fetch(`${apiBase}/api/tournaments/${tournamentId}/join`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await joinResp.json();
+
+            if (!joinResp.ok) {
+                throw new Error(data.message || 'Failed to join tournament');
+            }
+
+            this.showNotification('Successfully joined the tournament!', 'success');
+            this.loadTournaments(); // Refresh the list
+            this.loadMyTournaments(); // Refresh my tournaments section
+
+        } catch (error) {
+            console.error('Error joining tournament:', error);
+            this.showNotification(error.message || 'Failed to join tournament', 'error');
+
+            // If the error is because the tournament is full, refresh the list to update UI
+            if (error.message.includes('full')) {
+                this.loadTournaments();
+            }
+        }
+    }
+
+    async confirmPayment() {
+        if (!this.pendingPayment) {
+            this.showNotification('No pending payment found', 'error');
+            return;
+        }
+
+        // Hide payment modal
+        this.hidePaymentModal();
+
+        // Show loading notification
+        this.showNotification('Processing your registration...', 'info');
+
+        // Complete the tournament join
+        await this.completeTournamentJoin(this.pendingPayment.tournamentId);
     }
 
 

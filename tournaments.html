@@ -134,6 +134,84 @@
         </div>
     </div>
 
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content payment-modal">
+            <span class="close">&times;</span>
+            <div class="payment-header">
+                <div class="mpesa-logo">
+                    <div class="mpesa-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="mpesa-text">
+                        <span class="mpesa-brand">M-PESA</span>
+                        <span class="mpesa-tagline">Pay with M-PESA</span>
+                    </div>
+                </div>
+            </div>
+            <div class="payment-content">
+                <div class="payment-amount">
+                    <span class="amount-label">Tournament Entry Fee</span>
+                    <span class="amount-value" id="paymentAmount">KSh 0</span>
+                </div>
+                <div class="payment-instructions">
+                    <h3>How to Pay</h3>
+                    <div class="instruction-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <strong>Go to M-PESA Menu</strong>
+                                <p>Select "Lipa na M-PESA" on your phone</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <strong>Pay Bill</strong>
+                                <p>Business Number: <strong>400222</strong></p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <strong>Enter Account Number</strong>
+                                <p>Account: <strong id="accountNumber">TONA-KIKWETU</strong></p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <strong>Enter Amount</strong>
+                                <p>Amount: <strong id="mpesaAmount">KSh 0</strong></p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <strong>Complete Payment</strong>
+                                <p>Enter your M-PESA PIN and confirm</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="payment-notice">
+                    <div class="notice-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="notice-content">
+                        <strong>Important:</strong> After completing the payment, click "I've Paid" below to complete your tournament registration. Your payment will be verified before the tournament starts.
+                    </div>
+                </div>
+            </div>
+            <div class="payment-actions">
+                <button class="btn-secondary" id="cancelPayment">Cancel</button>
+                <button class="btn-primary mpesa-btn" id="confirmPayment">
+                    <i class="fas fa-check"></i> I've Paid - Complete Registration
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
