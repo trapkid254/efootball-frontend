@@ -141,8 +141,8 @@ class AdminTournamentsPage {
                                 </div>
                             </div>
                             <div class="card-footer">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="window.adminTournamentsPage.manageTournament('${tournament._id}')">
-                                    <i class="fas fa-cogs"></i> Manage
+                                <button class="btn btn-sm btn-outline-secondary" onclick="window.adminTournamentsPage.generateFixtures('${tournament._id}')">
+                                    <i class="fas fa-play"></i> Generate Fixtures
                                 </button>
                                 <button class="btn btn-sm btn-outline-primary" onclick="window.adminTournamentsPage.editTournament('${tournament._id}')">
                                     <i class="fas fa-edit"></i> Edit
@@ -262,6 +262,47 @@ class AdminTournamentsPage {
     editTournament(tournamentId) {
         // Redirect to edit page
         window.location.href = `admin-edit-tournament.html?id=${tournamentId}`;
+    }
+
+    async generateFixtures(tournamentId) {
+        if (!confirm('Are you sure you want to generate fixtures for this tournament? This will create matches for all registered participants.')) {
+            return;
+        }
+
+        try {
+            const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`${apiBase}/api/tournaments/${tournamentId}/generate-fixtures`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const ct = response.headers.get('content-type') || '';
+                let errorData = {};
+                if (ct.includes('application/json')) {
+                    errorData = await response.json().catch(() => ({}));
+                } else {
+                    const text = await response.text().catch(() => '');
+                    errorData.message = text || `Failed to generate fixtures (${response.status})`;
+                }
+                throw new Error(errorData.message || `Failed to generate fixtures (${response.status})`);
+            }
+
+            const data = await response.json();
+            this.showNotification(`Fixtures generated successfully! Created ${data.matches?.length || 0} matches.`, 'success');
+
+            // Reload tournaments list to show updated status
+            this.loadTournaments();
+
+        } catch (error) {
+            console.error('Error generating fixtures:', error);
+            this.showNotification(error.message || 'Failed to generate fixtures', 'error');
+        }
     }
 
     async deleteTournament(tournamentId) {

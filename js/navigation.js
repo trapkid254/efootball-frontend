@@ -22,8 +22,11 @@ class NavigationManager {
     }
 
     setupEventListeners() {
-        // Mobile menu toggle
-        if (this.mobileMenuBtn) {
+        // Check if this is an admin page
+        const isAdminPage = document.querySelector('.admin-navbar') !== null;
+
+        // Mobile menu toggle (skip on admin pages as they handle their own hamburger menu)
+        if (this.mobileMenuBtn && !isAdminPage) {
             this.mobileMenuBtn.addEventListener('click', () => this.toggleMobileMenu());
         }
 
@@ -98,12 +101,14 @@ class NavigationManager {
             });
         }
 
-        // Close mobile menu on window resize if it becomes desktop view
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
-                this.closeMobileMenu();
-            }
-        });
+        // Close mobile menu on window resize if it becomes desktop view (skip on admin pages)
+        if (!isAdminPage) {
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    this.closeMobileMenu();
+                }
+            });
+        }
 
         // Close modal with Escape key
         document.addEventListener('keydown', (e) => {
