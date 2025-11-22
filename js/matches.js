@@ -79,25 +79,25 @@ class MatchesPage {
     async loadMatches() {
         try {
             this.showLoading(true);
-            
+
             // First, check if the user is registered for any tournaments
             const tournamentsResponse = await this.fetchWithAuth('/api/user/my-tournaments');
-            
+
             if (!tournamentsResponse.success || tournamentsResponse.tournaments.length === 0) {
                 this.showNoTournamentsMessage();
                 return;
             }
-            
+
             // If user is registered in tournaments, fetch their matches
             const matchesResponse = await this.fetchWithAuth('/api/matches/my-matches');
-            
+
             if (!matchesResponse.success) {
                 throw new Error(matchesResponse.message || 'Failed to load matches');
             }
-            
+
             this.matches = matchesResponse.matches || [];
-            this.renderMatches();
-            
+            this.renderMatchesBySections();
+
         } catch (error) {
             console.error('Error loading matches:', error);
             this.showError('Failed to load matches. Please try again later.');
@@ -125,10 +125,10 @@ class MatchesPage {
         return await response.json();
     }
     
-    renderMatches() {
+    renderMatchesBySections() {
         const container = document.getElementById('matchesContainer');
         if (!container) return;
-        
+
         if (this.matches.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
@@ -139,29 +139,96 @@ class MatchesPage {
             `;
             return;
         }
-        
-        // Filter matches based on status
-        const filteredMatches = this.matches.filter(match => {
-            if (this.filters.status === 'all') return true;
-            return match.status === this.filters.status;
-        });
-        
-        if (filteredMatches.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-filter"></i>
-                    <h3>No Matches Found</h3>
-                    <p>No matches match your current filter criteria.</p>
+
+        // Categorize matches
+        const now = new Date();
+        const upcomingMatches = this.matches.filter(match =>
+            match.status === 'scheduled' && new Date(match.scheduledTime) > now
+        );
+
+        const recentMatches = this.matches.filter(match =>
+            match.status === 'completed' && this.isRecentMatch(match)
+        );
+
+        const completedMatches = this.matches.filter(match =>
+            match.status === 'completed' && !this.isRecentMatch(match)
+        );
+
+        const actionRequiredMatches = this.matches.filter(match =>
+            match.status === 'disputed' || (match.status === 'scheduled' && new Date(match.scheduledTime) <= now)
+        );
+
+        // Build HTML for each section
+        let html = '';
+
+        // Upcoming Matches
+        if (upcomingMatches.length > 0) {
+            html += `
+                <div class="matches-section">
+                    <h2><i class="fas fa-clock"></i> Upcoming Matches</h2>
+                    <div class="matches-grid">
+                        ${upcomingMatches.map(match => this.renderMatchCard(match)).join('')}
+                    </div>
                 </div>
             `;
-            return;
         }
-        
-        container.innerHTML = `
-            <div class="matches-list">
-                ${filteredMatches.map(match => this.renderMatchCard(match)).join('')}
-            </div>
-        `;
+
+        // Action Required
+        if (actionRequiredMatches.length > 0) {
+            html += `
+                <div class="matches-section">
+                    <h2><i class="fas fa-exclamation-circle"></i> Action Required</h2>
+                    <div class="matches-grid">
+                        ${actionRequiredMatches.map(match => this.renderMatchCard(match)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Recent Matches
+        if (recentMatches.length > 0) {
+            html += `
+                <div class="matches-section">
+                    <h2><i class="fas fa-history"></i> Recent Matches</h2>
+                    <div class="matches-grid">
+                        ${recentMatches.map(match => this.renderMatchCard(match)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Completed Matches
+        if (completedMatches.length > 0) {
+            html += `
+                <div class="matches-section">
+                    <h2><i class="fas fa-check-circle"></i> Completed Matches</h2>
+                    <div class="matches-grid">
+                        ${completedMatches.map(match => this.renderMatchCard(match)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (html === '') {
+            html = `
+                <div class="empty-state">
+                    <i class="fas fa-futbol"></i>
+                    <h3>No Matches Found</h3>
+                    <p>You don't have any matches at the moment.</p>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    isRecentMatch(match) {
+        if (!match.result?.confirmedAt) return false;
+        const confirmedDate = new Date(match.result.confirmedAt);
+        const now = new Date();
+        const diffTime = Math.abs(now - confirmedDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7; // Consider matches from last 7 days as recent
     }
     
     renderMatchCard(match) {

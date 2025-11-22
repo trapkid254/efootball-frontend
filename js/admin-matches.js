@@ -1,5 +1,6 @@
 class AdminMatchesPage {
     constructor() {
+        this.currentMatches = [];
         this.init();
     }
 
@@ -110,6 +111,9 @@ class AdminMatchesPage {
             const data = await response.json();
             const matches = data.matches || [];
 
+            // Store matches for modal access
+            this.currentMatches = matches;
+
             console.log(`Loaded ${matches.length} matches for admin`);
 
             if (matches.length === 0) {
@@ -187,7 +191,10 @@ class AdminMatchesPage {
                                 </div>
                             </div>
                             <div class="match-actions">
-                                <button class="btn btn-sm btn-primary verify-match" onclick="window.adminMatchesPage.verifyMatch('${match._id}')">
+                                <button class="btn btn-sm btn-warning update-scores" onclick="window.adminMatchesPage.showUpdateScoresModal('${match._id}')">
+                                    <i class="fas fa-edit"></i> Update Scores
+                                </button>
+                                <button class="btn btn-sm btn-primary verify-match" onclick="window.adminMatchesPage.verifyMatch('${match._id}')" ${(!match.player1?.score && !match.player2?.score) ? 'disabled' : ''}>
                                     <i class="fas fa-check"></i> Verify Result
                                 </button>
                                 <button class="btn btn-sm btn-outline-secondary view-details" onclick="window.adminMatchesPage.viewMatchDetails('${match._id}')">
@@ -371,6 +378,146 @@ class AdminMatchesPage {
         } catch (error) {
             console.error('Error verifying match:', error);
             this.showNotification(error.message || 'Failed to verify match', 'error');
+        }
+    }
+
+    showUpdateScoresModal(matchId) {
+        // Find the match data
+        const match = this.currentMatches?.find(m => m._id === matchId);
+        if (!match) {
+            this.showNotification('Match not found', 'error');
+            return;
+        }
+
+        // Create modal HTML
+        const modalHtml = `
+            <div id="updateScoresModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="this.closest('.modal').style.display='none'">&times;</span>
+                    <h2>Update Match Scores</h2>
+                    <div class="match-info">
+                        <h3>${match.tournament?.name || 'Tournament'}</h3>
+                        <div class="players-info">
+                            <div class="player">
+                                <strong>${match.player1?.user?.efootballId || 'Player 1'}</strong>
+                                <input type="number" id="player1Score" min="0" max="20" value="${match.player1?.score ?? ''}" placeholder="Score">
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="player">
+                                <strong>${match.player2?.user?.efootballId || 'Player 2'}</strong>
+                                <input type="number" id="player2Score" min="0" max="20" value="${match.player2?.score ?? ''}" placeholder="Score">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'">Cancel</button>
+                        <button class="btn btn-primary" onclick="window.adminMatchesPage.updateMatchScores('${matchId}')">Update & Verify</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if present
+        const existingModal = document.getElementById('updateScoresModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = document.getElementById('updateScoresModal');
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+
+        // Add modal styles if not already present
+        if (!document.getElementById('update-scores-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'update-scores-styles';
+            styles.textContent = `
+                .players-info {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin: 2rem 0;
+                    padding: 1rem;
+                    background: var(--bg-primary);
+                    border-radius: 8px;
+                }
+                .players-info .player {
+                    text-align: center;
+                    flex: 1;
+                }
+                .players-info .player input {
+                    margin-top: 0.5rem;
+                    padding: 0.5rem;
+                    border: 1px solid var(--border-color);
+                    border-radius: 4px;
+                    background: var(--bg-secondary);
+                    color: var(--text-primary);
+                    width: 80px;
+                    text-align: center;
+                }
+                .players-info .vs {
+                    font-weight: bold;
+                    color: var(--accent-color);
+                    margin: 0 1rem;
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+    }
+
+    async updateMatchScores(matchId) {
+        const player1Score = parseInt(document.getElementById('player1Score').value);
+        const player2Score = parseInt(document.getElementById('player2Score').value);
+
+        if (isNaN(player1Score) || isNaN(player2Score)) {
+            this.showNotification('Please enter valid scores for both players', 'error');
+            return;
+        }
+
+        if (player1Score < 0 || player2Score < 0) {
+            this.showNotification('Scores cannot be negative', 'error');
+            return;
+        }
+
+        try {
+            const apiBase = window.API_BASE_URL || 'https://efootball-backend-f8ws.onrender.com';
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`${apiBase}/api/matches/${matchId}/admin-update`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    player1Score: player1Score,
+                    player2Score: player2Score
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Failed to update scores (${response.status})`);
+            }
+
+            // Close modal
+            const modal = document.getElementById('updateScoresModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+
+            this.showNotification('Match scores updated and verified successfully!', 'success');
+            // Reload matches list
+            this.loadMatches();
+
+        } catch (error) {
+            console.error('Error updating match scores:', error);
+            this.showNotification(error.message || 'Failed to update match scores', 'error');
         }
     }
 
