@@ -191,13 +191,13 @@ class AdminMatchesPage {
                                 </div>
                             </div>
                             <div class="match-actions">
-                                <button class="btn btn-sm btn-warning update-scores" onclick="window.adminMatchesPage.showUpdateScoresModal('${match._id}')">
+                                <button class="btn btn-sm btn-warning update-scores" data-match-id="${match._id}">
                                     <i class="fas fa-edit"></i> Update Scores
                                 </button>
-                                <button class="btn btn-sm btn-primary verify-match" onclick="window.adminMatchesPage.verifyMatch('${match._id}')" ${(!match.player1?.score && !match.player2?.score) ? 'disabled' : ''}>
+                                <button class="btn btn-sm btn-primary verify-match" data-match-id="${match._id}" ${(!match.player1?.score && !match.player2?.score) ? 'disabled' : ''}>
                                     <i class="fas fa-check"></i> Verify Result
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary view-details" onclick="window.adminMatchesPage.viewMatchDetails('${match._id}')">
+                                <button class="btn btn-sm btn-outline-secondary view-details" data-match-id="${match._id}">
                                     <i class="fas fa-eye"></i> View Details
                                 </button>
                             </div>
@@ -293,6 +293,9 @@ class AdminMatchesPage {
                         justify-content: flex-end;
                     }
                 </style>`;
+
+            // Attach event listeners to dynamically created buttons
+            this.attachButtonEventListeners();
 
         } catch (error) {
             console.error('Error loading matches:', error);
@@ -519,6 +522,41 @@ class AdminMatchesPage {
             console.error('Error updating match scores:', error);
             this.showNotification(error.message || 'Failed to update match scores', 'error');
         }
+    }
+
+    attachButtonEventListeners() {
+        // Attach event listeners to update scores buttons
+        document.querySelectorAll('.update-scores').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const matchId = e.target.closest('button').getAttribute('data-match-id');
+                if (matchId) {
+                    this.showUpdateScoresModal(matchId);
+                }
+            });
+        });
+
+        // Attach event listeners to verify match buttons
+        document.querySelectorAll('.verify-match').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const matchId = e.target.closest('button').getAttribute('data-match-id');
+                if (matchId) {
+                    this.verifyMatch(matchId);
+                }
+            });
+        });
+
+        // Attach event listeners to view details buttons
+        document.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const matchId = e.target.closest('button').getAttribute('data-match-id');
+                if (matchId) {
+                    this.viewMatchDetails(matchId);
+                }
+            });
+        });
     }
 
     viewMatchDetails(matchId) {
