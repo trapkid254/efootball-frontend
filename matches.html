@@ -109,6 +109,14 @@
                 </div>
             </div>
 
+            <!-- Completed Matches -->
+            <div class="matches-section">
+                <h2><i class="fas fa-check-circle"></i> Completed Matches</h2>
+                <div class="matches-grid" id="completedMatches">
+                    <!-- Completed matches will be loaded here -->
+                </div>
+            </div>
+
             <!-- Empty States -->
             <div id="loadingState" class="loading-state">
                 <div class="spinner"></div>
@@ -137,16 +145,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="playerScore">Your Score</label>
-                    <input type="number" id="playerScore" name="playerScore" min="0" max="20" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="opponentScore">Opponent's Score</label>
-                    <input type="number" id="opponentScore" name="opponentScore" min="0" max="20" required>
-                </div>
-
-                <div class="form-group">
                     <label for="screenshot">Match Screenshot (Required)</label>
                     <div class="file-upload">
                         <input type="file" id="screenshot" name="screenshot" accept="image/*" required>
@@ -156,7 +154,7 @@
                         </label>
                         <div class="file-name" id="fileName">No file chosen</div>
                     </div>
-                    <small>Upload a clear screenshot showing the final score</small>
+                    <small>Upload a screenshot of the match result. The admin will verify and update the scores.</small>
                 </div>
 
                 <div class="form-actions">
