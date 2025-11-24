@@ -322,9 +322,9 @@ class ProfileManager {
             originalBtnHTML = uploadBtn.innerHTML;
         }
 
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            this.showNotification('❌ Image size should be less than 2MB', 'error');
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            this.showNotification('❌ Image size should be less than 10MB', 'error');
             return;
         }
 
@@ -967,7 +967,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add cache-busting to avatar URLs
-    document.querySelectorAll('img[src*="/uploads/avatars/"]').forEach(img => {
+    document.querySelectorAll('img[src*="/uploads/avatars/"], img[src*="/uploads/profile/"]').forEach(img => {
         const src = img.getAttribute('src');
         if (src && !src.includes('?')) {
             img.src = `${src}?t=${Date.now()}`;
