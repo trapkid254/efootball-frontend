@@ -13,6 +13,7 @@ class TonaKikwetuApp {
         this.loadSampleData();
         this.checkAuthStatus();
         this.setupSmoothScrolling();
+        this.handleUrlHash();
     }
 
     setupEventListeners() {
@@ -231,7 +232,7 @@ class TonaKikwetuApp {
             if (anchor.id === 'showRegister' || !anchor.getAttribute('href')) {
                 return;
             }
-            
+
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const targetId = this.getAttribute('href');
@@ -247,6 +248,17 @@ class TonaKikwetuApp {
                 }
             });
         });
+    }
+
+    handleUrlHash() {
+        // Handle URL hash for login modal
+        const hash = window.location.hash;
+        if (hash === '#login') {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                this.showLoginModal();
+            }, 100);
+        }
     }
 
     toggleTheme() {

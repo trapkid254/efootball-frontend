@@ -65,7 +65,8 @@ class ProfileManager {
                         // Token might be expired or invalid
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
-                        window.location.href = 'login.html';
+                        // Redirect to home page with login modal
+                        window.location.href = 'index.html#login';
                         return null;
                     }
                     
