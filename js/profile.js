@@ -32,10 +32,13 @@ class ProfileManager {
                 }
 
                 const apiUrl = `${window.API_BASE_URL || ''}/api/users/me`;
+                const storedToken = localStorage.getItem('token');
                 console.log('🔍 Profile API call:', {
                     apiUrl: apiUrl,
                     apiBaseUrl: window.API_BASE_URL,
                     hostname: window.location.hostname,
+                    hasToken: !!storedToken,
+                    tokenLength: storedToken ? storedToken.length : 0,
                     fullUrl: window.location.href
                 });
                 
