@@ -32,7 +32,12 @@ class ProfileManager {
                 }
 
                 const apiUrl = `${window.API_BASE_URL || ''}/api/users/me`;
-                console.log('Fetching user profile from:', apiUrl);
+                console.log('🔍 Profile API call:', {
+                    apiUrl: apiUrl,
+                    apiBaseUrl: window.API_BASE_URL,
+                    hostname: window.location.hostname,
+                    fullUrl: window.location.href
+                });
                 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout

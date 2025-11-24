@@ -1,8 +1,19 @@
 // API Configuration
 // For local development, use localhost. For production, use the deployed backend URL
-window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const hostname = window.location.hostname;
+const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+window.API_BASE_URL = isLocal
   ? 'http://localhost:10000'
   : 'https://efootball-backend-f8ws.onrender.com';
+
+// Debug logging
+console.log('🔧 Config loaded:', {
+  hostname: hostname,
+  isLocal: isLocal,
+  apiBaseUrl: window.API_BASE_URL,
+  fullUrl: window.location.href
+});
 
 // CORS configuration
 const corsConfig = {
