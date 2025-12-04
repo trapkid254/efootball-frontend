@@ -547,18 +547,35 @@ class TonaKikwetuApp {
             
             // Show login form
             this.showLoginModal();
-                            passwordInput.setCustomValidity(data.errors.password);
-                            passwordInput.reportValidity();
+            this.showNotification('Registration successful! Please log in.', 'success');
+        } catch (error) {
+            console.error('Registration error:', error);
+            if (error.response) {
+                // Handle response errors
+                const data = await error.response.json().catch(() => ({}));
+                if (error.response.status === 400 && data.errorType === 'VALIDATION_ERROR') {
+                    // Handle validation errors
+                    if (data.errors) {
+                        for (const [field, message] of Object.entries(data.errors)) {
+                            const input = document.getElementById(`reg${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                            if (input) {
+                                input.setCustomValidity(message);
+                                input.reportValidity();
+                            }
                         }
                     }
-                } else if (response.status === 400 && data.errorType === 'USER_EXISTS') {
+                } else if (error.response.status === 400 && data.errorType === 'USER_EXISTS') {
                     this.showNotification(data.message || 'This user already exists', 'error');
                 } else {
                     this.showNotification(data.message || 'Registration failed. Please try again.', 'error');
                 }
-                
-                throw new Error(data.message || 'Registration failed');
+            } else {
+                // Handle other types of errors
+                this.showNotification('An error occurred during registration. Please try again.', 'error');
             }
+        } finally {
+            this.showLoading(false);
+        }
 
             if (!response.ok) {
                 // Handle specific error types
