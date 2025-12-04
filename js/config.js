@@ -3,16 +3,11 @@
 const hostname = window.location.hostname;
 const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
-// TEMPORARY: Force production URL for testing
-// TODO: Remove this line after redeploying
-window.API_BASE_URL = 'https://efootball-backend-f8ws.onrender.com';
-
-/*
-// Original logic (uncomment after redeploying):
+// Original logic:
 window.API_BASE_URL = isLocal
   ? 'http://localhost:10000'
   : 'https://efootball-backend-f8ws.onrender.com';
-*/
+
 
 // Debug logging
 console.log('🔧 Config loaded:', {
