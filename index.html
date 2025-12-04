@@ -12,7 +12,12 @@
 </head>
 <body class="dark-theme">
     <script>
-        window.API_BASE_URL = 'http://localhost:10000';
+        // Set API base URL based on environment
+        window.API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:10001'  // Local development
+            : 'https://efootball-backend-f8ws.onrender.com';  // Production
+        
+        console.log('Using API Base URL:', window.API_BASE_URL);
     </script>
     <!-- Navigation -->
     <nav class="navbar">

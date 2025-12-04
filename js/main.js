@@ -444,27 +444,46 @@ class TonaKikwetuApp {
 
         try {
             this.showLoading(true);
-            console.log('Sending registration request with data:', {
+            
+            // Log the API URL being called
+            const apiUrl = `${window.API_BASE_URL || ''}/api/auth/register`;
+            console.log('Sending registration request to:', apiUrl);
+            console.log('Request data:', {
                 whatsapp: formattedWhatsapp,
                 efootballId: registerData.efootballId,
                 password: '[HIDDEN]' // Don't log actual password
             });
 
             // Call the registration API
-            const response = await fetch(`${window.API_BASE_URL || ''}/api/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    whatsapp: formattedWhatsapp,
-                    efootballId: registerData.efootballId,
-                    password: registerData.password
-                }),
-                credentials: 'include' // Include cookies if needed
-            });
+            let response;
+            try {
+                response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        whatsapp: formattedWhatsapp,
+                        efootballId: registerData.efootballId,
+                        password: registerData.password
+                    }),
+                    credentials: 'include' // Include cookies if needed
+                });
+            } catch (networkError) {
+                console.error('Network error during registration:', networkError);
+                this.showNotification('Unable to connect to the server. Please check your internet connection and try again.', 'error');
+                return;
+            }
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.error('Error parsing JSON response:', jsonError);
+                this.showNotification('Server returned an invalid response. Please try again later.', 'error');
+                return;
+            }
             
             // If response is not ok, handle the error
             if (!response.ok) {
@@ -474,30 +493,60 @@ class TonaKikwetuApp {
                     data
                 });
                 
+                // Clear any previous custom validation messages
+                ['regWhatsapp', 'regEfootballId', 'regPassword', 'regConfirmPassword'].forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) input.setCustomValidity('');
+                });
+                
                 // Handle specific error cases
-                if (response.status === 400 && data.errorType === 'VALIDATION_ERROR') {
-                    // Show validation errors to the user
-                    const errorMessages = Object.values(data.errors || {}).join('\n');
-                    this.showNotification(`Validation error: ${errorMessages}`, 'error');
-                    
-                    // Highlight problematic fields
-                    if (data.errors.whatsapp) {
-                        const whatsappInput = document.getElementById('regWhatsapp');
-                        if (whatsappInput) {
-                            whatsappInput.setCustomValidity(data.errors.whatsapp);
-                            whatsappInput.reportValidity();
+                if (response.status === 400) {
+                    if (data.errorType === 'VALIDATION_ERROR' || data.errors) {
+                        // Show validation errors to the user
+                        const errorMessages = data.message || Object.values(data.errors || {}).join('\n');
+                        this.showNotification(`Validation error: ${errorMessages}`, 'error');
+                        
+                        // Highlight problematic fields
+                        const fieldMap = {
+                            whatsapp: 'regWhatsapp',
+                            efootballId: 'regEfootballId',
+                            password: 'regPassword',
+                            confirmPassword: 'regConfirmPassword'
+                        };
+                        
+                        for (const [field, error] of Object.entries(data.errors || {})) {
+                            const inputId = fieldMap[field];
+                            if (inputId) {
+                                const input = document.getElementById(inputId);
+                                if (input) {
+                                    input.setCustomValidity(error);
+                                    input.reportValidity();
+                                }
+                            }
                         }
+                    } else if (data.message) {
+                        this.showNotification(data.message, 'error');
+                    } else {
+                        this.showNotification('Invalid registration data. Please check your inputs and try again.', 'error');
                     }
-                    if (data.errors.efootballId) {
-                        const efootballInput = document.getElementById('regEfootballId');
-                        if (efootballInput) {
-                            efootballInput.setCustomValidity(data.errors.efootballId);
-                            efootballInput.reportValidity();
-                        }
-                    }
-                    if (data.errors.password) {
-                        const passwordInput = document.getElementById('regPassword');
-                        if (passwordInput) {
+                } else if (response.status === 409) {
+                    this.showNotification(data.message || 'A user with these details already exists.', 'error');
+                } else {
+                    this.showNotification(data.message || 'Registration failed. Please try again.', 'error');
+                }
+                return;
+            }
+
+            // If we get here, registration was successful
+            this.showNotification('Registration successful! You can now log in.', 'success');
+            this.hideAllModals();
+            
+            // Clear the form
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) registerForm.reset();
+            
+            // Show login form
+            this.showLoginModal();
                             passwordInput.setCustomValidity(data.errors.password);
                             passwordInput.reportValidity();
                         }
