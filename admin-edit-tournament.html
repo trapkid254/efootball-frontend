@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Tournament - TONA KIKWETU</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <script>
+        window.API_BASE_URL = 'http://localhost:10000';
+    </script>
+    <!-- Admin Navigation -->
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="assets/images/ChatGPT%20Image%20Nov%2012,%202025,%2011_55_36%20PM.png" alt="Tona Kikwetu Logo" class="site-logo">
+                <span class="site-title">TONA KIKWETU <span class="admin-text">ADMIN</span></span>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <a href="admin.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin-tournaments.html" class="nav-link active">
+                    <i class="fas fa-trophy"></i>
+                    <span>Tournaments</span>
+                </a>
+                <a href="admin-matches.html" class="nav-link">
+                    <i class="fas fa-gamepad"></i>
+                    <span>Matches</span>
+                </a>
+                <a href="admin-players.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Players</span>
+                </a>
+                <a href="admin-payments.html" class="nav-link">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payments</span>
+                </a>
+                <button class="theme-toggle nav-link" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-logout professional" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Edit Tournament Section -->
+    <section class="admin-section">
+        <div class="container">
+            <div class="section-header">
+                <h1>Edit Tournament</h1>
+                <button id="backBtn" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Tournaments
+                </button>
+            </div>
+            <div id="editContainer">
+                <!-- Edit form will be loaded here -->
+            </div>
+        </div>
+        <style>
+            .section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .section-header h1 {
+                margin: 0;
+            }
+
+            #backBtn {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 16px;
+                font-size: 14px;
+                font-weight: 500;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            #backBtn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+    </section>
+
+    <script src="js/auth.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/admin-edit-tournament.js"></script>
+</body>
+</html>
