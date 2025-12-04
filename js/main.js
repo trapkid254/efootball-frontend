@@ -577,42 +577,6 @@ class TonaKikwetuApp {
             this.showLoading(false);
         }
 
-            if (!response.ok) {
-                // Handle specific error types
-                if (data.errorType === 'WEAK_PASSWORD') {
-                    this.showNotification('Password does not meet requirements. ' + data.message, 'error');
-                } else if (data.errorType === 'USER_EXISTS') {
-                    this.showNotification(data.message || 'An account with these details already exists', 'error');
-                } else {
-                    throw new Error(data.message || 'Registration failed');
-                }
-                return;
-            }
-
-            // Registration successful
-            this.showNotification(data.message || 'Registration successful!', 'success');
-            
-            // Auto-login after successful registration if token is returned
-            if (data.token && data.user) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                this.currentUser = data.user;
-                this.hideAllModals();
-                this.updateUIForAuth();
-                
-                // Redirect to dashboard or home page
-                window.location.href = 'dashboard.html';
-            } else {
-                // If auto-login didn't happen, show login form
-                this.showLoginModal();
-            }
-            
-        } catch (error) {
-            console.error('Registration error:', error);
-            this.showNotification(error.message || 'Registration failed. Please try again.', 'error');
-        } finally {
-            this.showLoading(false);
-        }
     }
 
     validatePhone(phone) {
